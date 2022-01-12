@@ -81,6 +81,16 @@ export default {
           title: 'Inspire',
           to: '/inspire',
         },
+        {
+          icon: 'mdi-chart-bubble',
+          title: 'SignIn 01',
+          to: '/signin/comp01',
+        },
+        {
+          icon: 'mdi-chart-bubble',
+          title: 'SignIn 02',
+          to: '/signin/comp02',
+        },
       ],
       miniVariant: false,
       right: true,
