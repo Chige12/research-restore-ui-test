@@ -1,14 +1,15 @@
 <template>
   <v-row justify="center" align="center">
     <v-col cols="12" sm="8" md="6">
-      <v-card>
+      <v-card color="#fafafa" elevation="0" id="check-component">
         <v-card-title class="headline px-8 pt-8">Sign in</v-card-title>
         <v-card-text class="pa-8">
           <v-text-field
             v-model="email"
             type="email"
-            label="Email address"
+            label="Email"
             :rules="[rules.required, rules.email]"
+            prepend-icon="mdi-email-outline"
           ></v-text-field>
           <v-text-field
             v-model="password"
@@ -19,12 +20,13 @@
             name="input-10-2"
             hint="At least 8 characters"
             class="input-group--focused"
+            prepend-icon="mdi-lock-outline"
             @click:append="isShowPassword = !isShowPassword"
           ></v-text-field>
         </v-card-text>
         <v-card-actions class="px-8 pb-8">
           <v-spacer />
-          <v-btn nuxt to="/inspire">Continue</v-btn>
+          <v-btn color="primary" x-large elevation="0" nuxt to="/inspire">サインイン</v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
@@ -33,6 +35,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import Mixin from '~/mixins/deepDiff'
 
 type Data = {
   email: string
@@ -47,6 +50,7 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp01',
+  mixins: [ Mixin ],
   data(): Data {
     return {
       email: '',

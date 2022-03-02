@@ -1,9 +1,9 @@
 <template>
   <v-row justify="center" align="center">
     <v-col cols="12" sm="8" md="6">
-      <v-card outlined>
-        <v-card-title class="headline px-8 pt-8"> Sign in </v-card-title>
-        <v-card-text class="pa-8">
+      <v-card outlined id="check-component">
+        <v-card-title class="headline px-12 pt-8"> Sign in </v-card-title>
+        <v-card-text class="px-12 py-4">
           <v-text-field
             v-model="email"
             type="email"
@@ -24,7 +24,7 @@
             @click:append="isShowPassword = !isShowPassword"
           ></v-text-field>
         </v-card-text>
-        <v-card-actions class="px-8 pb-8">
+        <v-card-actions class="px-12 pb-8">
           <v-spacer />
           <v-btn outlined nuxt to="/inspire"> Continue </v-btn>
         </v-card-actions>
@@ -35,6 +35,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import Mixin from '~/mixins/deepDiff'
 
 type Data = {
   email: string
@@ -49,6 +50,7 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp01',
+  mixins: [ Mixin ],
   data(): Data {
     return {
       email: '',
