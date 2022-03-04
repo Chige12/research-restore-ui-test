@@ -1,14 +1,28 @@
-import { HastNode } from 'hast-util-from-dom/lib';
+import { HastNode, HastElement, HastRoot } from 'hast-util-from-dom/lib';
 
-// type
-interface Change {
-  from?: string;
-  to?: string;
+export type Operation = "add" | "replace" | "remove";
+export interface Diff { 
+  op: Operation; 
+  path: Array<string | number>;
+  value: any
+}
+export type JustDiff = Array<Diff>
+
+export type DiffType = "class" | "style" | "dom"
+
+export type ElementDiff = HastNode | JustElementHastNode | undefined
+export type ElementDiffs = {
+  from?: ElementDiff
+  to?: ElementDiff
 }
 
-export interface Changes {
-  [key : string]: Change;
+interface Info {
+  type: DiffType,
+  elementDiffs: ElementDiffs | null,
+  from?: HastNode | undefined,
 }
+export type Diffs = Array<Diff>
+export type DiffAndInfos = Array<Diff & Info>
 
 export const EVENT = {
   First: 'first',
@@ -18,16 +32,24 @@ export const EVENT = {
 
 export type EVENT_TYPES = typeof EVENT[keyof typeof EVENT];
 
+export type EventInfo = {
+  event: Event;
+  type: string;
+  eventHast: HastNode;
+  eventId: string;
+}
+
 export type HastHistory = {
   type: EVENT_TYPES;
   hast: HastNode;
-  event?: Event;
+  eventInfo?: EventInfo | undefined;
 }
 
 export type DiffHistory = {
   from: HastHistory | Error;
   to: HastHistory | Error;
-  diff: Changes | null;
+  diffs: Diffs | null;
+  diffAndInfos : DiffAndInfos | null;
 }
 
 export type Error = {
@@ -39,11 +61,27 @@ export type Data = {
   hastHistories: Array<HastHistory | Error>;
   diffHistories: Array<DiffHistory>;
   pathName: string;
+  mergeIdList: string[];
+}
+
+export type JustElementHastNode = {
+  type: HastElement['type'];
+  tagName: HastElement['tagName'];
+  properties?: HastElement['properties'];
+  content?: HastElement['content'];
+} | {
+  type: HastRoot['type']
 }
 
 export type Methods = {
-  getDOM: (type: EVENT_TYPES, event?: Event) => void;
-  deepDiff: (fromObject: HastNode, toObject: HastNode) => Changes;
-  recordDiff: () => void;
+  setIdToAllElements: (pathName: string) => void;
+  getEventInfo: (event?: Event) => EventInfo | undefined;
+  createHastHistory: (type: EVENT_TYPES, event?: Event) => void;
+  createAndSaveDiff: () => void;
   createJsonFile: (pathName: string) => void;
+  convertDiffAndInfos: (diffs: JustDiff, fromHast: HastNode, toHast: HastNode) => DiffAndInfos;
+  checkDiffType: (diff: Diff) => DiffType;
+  getFrom: (diff: Diff, fromHast: HastNode ) => HastNode | undefined;
+  getElementDiffs: (diff: Diff, fromHast: HastNode, toHast: HastNode) => ElementDiffs | null;
+  getJustElementHast: (hast: HastNode, path: Diff['path']) => JustElementHastNode | HastNode | undefined;
 }

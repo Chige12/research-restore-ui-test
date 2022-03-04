@@ -1,18 +1,12 @@
 import Vue from 'vue'
-// lodash
-import isUndefined from 'lodash/isUndefined';
-import has from 'lodash/has';
-import get from 'lodash/get';
-import entries from 'lodash/entries';
-import isEqual from 'lodash/isEqual';
-import isObjectLike from 'lodash/isObjectLike';
-import keys from 'lodash/keys';
-// hast
+import { get, has } from 'lodash';
 import { fromDom } from 'hast-util-from-dom'
-import { HastNode } from 'hast-util-from-dom/lib'
 
-import {Changes, HastHistory, DiffHistory, Data, Methods, Error, EVENT, EVENT_TYPES} from './deepDiffType'
+import { diff as justDiff } from 'just-diff';
+import { HastHistory, DiffHistory, Data, Methods, Error, EVENT, EVENT_TYPES, JustDiff, DiffAndInfos, DiffType, Diff, ElementDiffs, JustElementHastNode, EventInfo } from './deepDiffType'
+import { HastNode } from 'hast-util-from-dom/lib';
 
+const ROOT_ELEMENT_ID = 'check-component'
 
 export default Vue.extend<Data, Methods, {}, {}>({
   data(): Data {
@@ -20,64 +14,106 @@ export default Vue.extend<Data, Methods, {}, {}>({
       hastHistories: [],
       diffHistories: [],
       pathName: '',
+      mergeIdList: []
     }
   },
+
   mounted() {
-    this.getDOM(EVENT.First)
-    this.pathName = location.pathname.replace('/', '-')
-    window.addEventListener('click', (e) => this.getDOM(EVENT.CLICK, e), false)
-    window.addEventListener('keydown', (e) => this.getDOM(EVENT.KEY, e), false)
+    const pathName = location.pathname.replaceAll('/', '-')
+    console.log(pathName)
+    this.pathName = pathName
+    this.setIdToAllElements(pathName)
+    this.createHastHistory(EVENT.First)
+    
+    window.addEventListener('click', (e) => this.createHastHistory(EVENT.CLICK, e), false)
+    window.addEventListener('keydown', (e) => this.createHastHistory(EVENT.KEY, e), false)
   },
+
   beforeDestroy (): void {
     this.createJsonFile(this.pathName)
   },
-  destroyed (): void {
-    window.removeEventListener('click', (e) => this.getDOM(EVENT.CLICK, e), false)
-    window.removeEventListener('keydown', (e) => this.getDOM(EVENT.KEY, e), false)
-  },
-  methods: {
-    getDOM(type: EVENT_TYPES, event?: Event) {
-      const elementId = 'check-component'
-      const dom: HTMLElement | null = document.getElementById(elementId)
 
-      if (!dom) {
-        const text = 'Error in getDOM: id "check-component" is null.'
+  destroyed (): void {
+    window.removeEventListener('click', (e) => this.createHastHistory(EVENT.CLICK, e), false)
+    window.removeEventListener('keydown', (e) => this.createHastHistory(EVENT.KEY, e), false)
+  },
+
+  methods: {
+    setIdToAllElements(pathName: string) {
+      const rootElement: HTMLElement | null = document.getElementById(ROOT_ELEMENT_ID)
+      if(!rootElement) return;
+      rootElement.querySelectorAll('*').forEach((node,index) => {
+        if (node.id) return;
+        const id = `ReReUiTestId${pathName}-${String(index)}-${node.tagName}`
+        node.setAttribute('id', id)
+      });
+    },
+    createHastHistory(type: EVENT_TYPES, event?: Event) {
+      const rootElement: HTMLElement | null = document.getElementById(ROOT_ELEMENT_ID)
+
+      if (!rootElement) {
+        const text = 'Error in createHastHistory: id "check-component" is null.'
         const error: Error = { text }
         console.log(text)
         this.hastHistories.push(error)
         return
       }
-      const hast = fromDom(dom);
 
-      const hastHistory: HastHistory = { type, hast, event }
+      const eventInfo = this.getEventInfo(event)
+      const hast = fromDom(rootElement);
+      const hastHistory: HastHistory = { type, hast, eventInfo }
       console.log('Record dom', hastHistory)
       this.hastHistories.push(hastHistory)
-      this.recordDiff()
+      this.createAndSaveDiff()
     },
-    recordDiff() {
+
+    getEventInfo(event?: Event): EventInfo | undefined {
+      const target = event ? event.target : null
+      const isTarget = target instanceof HTMLElement
+      if (event && isTarget) {
+        const eventHast = fromDom(target)
+        const eventId = target.id
+        return {
+          event,
+          type: event.type,
+          eventHast,
+          eventId,
+        }
+      }
+      return undefined
+    },
+
+    createAndSaveDiff() {
       const hasts = this.hastHistories
-      console.log("hasts", hasts)
       const fromHistory = hasts[hasts.length - 2] as HastHistory
       const toHistory   = hasts[hasts.length - 1] as HastHistory
 
-      if((fromHistory && 'hast' in fromHistory) && (toHistory && 'hast' in toHistory)) {
-        const changes = this.deepDiff(fromHistory.hast, toHistory.hast)
-        console.log('changes', changes)
+      const isSave = (fromHistory && 'hast' in fromHistory) && (toHistory && 'hast' in toHistory)
+
+      if(isSave) {
+        const diffs = justDiff(fromHistory.hast, toHistory.hast)
+        const diffAndInfos = this.convertDiffAndInfos(diffs, fromHistory.hast, toHistory.hast)
+        console.log('diffAndInfos', diffAndInfos)
+
         const diffHistory: DiffHistory = {
           from: fromHistory,
           to: toHistory,
-          diff: changes,
+          diffs,
+          diffAndInfos,
         }
         this.diffHistories.push(diffHistory)
         return;
       }
+
       const errorHistory: DiffHistory = {
         from: fromHistory,
         to: toHistory,
-        diff: null,
+        diffs: null,
+        diffAndInfos: null,
       }
       this.diffHistories.push(errorHistory)
     },
+
     createJsonFile(pathName: string) {
       const jsonHistories = JSON.stringify(this.diffHistories, null, '  ')
       const blob = new Blob([jsonHistories], {
@@ -89,40 +125,74 @@ export default Vue.extend<Data, Methods, {}, {}>({
       link.click();
       link.remove();
     },
-    deepDiff(fromObject: HastNode, toObject: HastNode) {
-      const changes: Changes = {};
 
-      const buildPath = (key: string, _obj: HastNode, path?: string ): string => 
-        isUndefined(path) ? key : `${path}.${key}`;
-
-      const walk = (fromObject: HastNode, toObject: HastNode, path?: string) => {
-        for (const key of keys(fromObject)) {
-          const currentPath = buildPath(key, fromObject, path);
-          if (!has(toObject, key)) {
-            changes[currentPath] = {from: get(fromObject, key)};
-          }
+    convertDiffAndInfos(diffs: JustDiff, fromHast: HastNode, toHast: HastNode): DiffAndInfos {
+      const diffAndInfos = diffs.map(diff => {
+        const type = this.checkDiffType(diff)
+        const from = this.getFrom(diff, fromHast)
+        const elementDiffs = this.getElementDiffs(diff, fromHast, toHast)
+        return {
+          ...diff,
+          type,
+          elementDiffs,
+          from,
         }
-
-        for (const [key, to] of entries(toObject)) {
-          const currentPath = buildPath(key, toObject, path);
-          if (!has(fromObject, key)) {
-            changes[currentPath] = {to};
-          } else {
-            const from = get(fromObject, key);
-            if (!isEqual(from, to)) {
-              if (isObjectLike(to) && isObjectLike(from)) {
-                walk(from, to, currentPath);
-              } else {
-                changes[currentPath] = {from, to};
-              }
-            }
-          }
+      });
+      // CSSのclass配列のdiffを順不同で検証したいので、同じidのDOMが存在する場合マージする
+      const mergedSameElementDiffAndInfos = diffAndInfos.filter(diff => {
+        if (diff.type !== 'class') return true
+        const elem = diff.elementDiffs?.to
+        const hasId = elem && ('properties' in elem) && ('id' && elem.properties)
+        if (!hasId) return true
+        const id = elem.properties?.id
+        if (!id || Array.isArray(id) || id === true || typeof id === 'number') return true
+        const isUnique = !this.mergeIdList.some(item => item === id)
+        if (isUnique) {
+          this.mergeIdList.push(id)
+          return true
         }
-      };
-
-      walk(fromObject, toObject);
-
-      return changes;
+      })
+      return mergedSameElementDiffAndInfos
     },
+
+    checkDiffType(diff: Diff): DiffType {
+      const { path } = diff
+      const isClass = path.some(p => p === 'className')
+      if (isClass) return 'class';
+      const isStyle = path.some(p => p === 'style')
+      if (isStyle) return 'style';
+      return 'dom'
+    },
+
+    getFrom(diff: Diff, fromHast: HastNode ): HastNode | undefined {
+      const { op, path } = diff
+      if (op === 'add') return;
+      return get(fromHast, path)
+    },
+
+    getElementDiffs(diff: Diff, fromHast: HastNode, toHast: HastNode): ElementDiffs | null {
+      const { path } = diff
+      const index = path.lastIndexOf('children')
+      if (index === -1) return null;
+
+      const lastHastPath = path.slice(0, index + 2)
+      const toJustHast = this.getJustElementHast(toHast, lastHastPath)
+      const fromJustHast = this.getJustElementHast(fromHast, lastHastPath)
+      if (!toJustHast && !fromJustHast) return null;
+      return {
+        from: fromJustHast,
+        to: toJustHast,
+      }
+    },
+
+    getJustElementHast(hast: HastNode, path: Diff['path']): JustElementHastNode | HastNode | undefined {
+      const lastHast: HastNode = get(hast, path)
+      if (!lastHast) return undefined;
+      if ('children' in lastHast) {
+        const { children, ...justElementHast } = lastHast
+        return justElementHast
+      }
+      return lastHast
+    }
   }
 })
