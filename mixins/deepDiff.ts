@@ -70,9 +70,10 @@ export default Vue.extend<Data, Methods, {}, {}>({
     getEventInfo(event?: Event): EventInfo | undefined {
       const target = event ? event.target : null
       const isTarget = target instanceof HTMLElement
-      if (event && isTarget) {
-        const eventHast = fromDom(target)
-        const eventId = target.id
+      if (event && target && isTarget) {
+        const element = target as HTMLElement
+        const eventHast = fromDom(element)
+        const eventId = element.id
         return {
           event,
           type: event.type,
@@ -142,9 +143,9 @@ export default Vue.extend<Data, Methods, {}, {}>({
       const mergedSameElementDiffAndInfos = diffAndInfos.filter(diff => {
         if (diff.type !== 'class') return true
         const elem = diff.elementDiffs?.to
-        const hasId = elem && ('properties' in elem) && ('id' && elem.properties)
-        if (!hasId) return true
-        const id = elem.properties?.id
+        // todo: 説明変数化（なぜか変数にすると型推論が効かなくなる）
+        if (!elem || !('properties' in elem) || !elem.properties) return true
+        const id = elem.properties.id
         if (!id || Array.isArray(id) || id === true || typeof id === 'number') return true
         const isUnique = !this.mergeIdList.some(item => item === id)
         if (isUnique) {
