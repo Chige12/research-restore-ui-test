@@ -3359,6 +3359,11 @@ css-prefers-color-scheme@^3.1.1:
   dependencies:
     postcss "^7.0.5"
 
+css-properties@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/css-properties/-/css-properties-2.0.2.tgz#6907cbda59933d7bc4654a8026ad05f646b9f822"
+  integrity sha1-aQfL2lmTPXvEZUqAJq0F9ka5+CI=
+
 css-select-base-adapter@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/css-select-base-adapter/-/css-select-base-adapter-0.1.1.tgz#3b2ff4972cc362ab88561507a95408a1432135d7"

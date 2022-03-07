@@ -10,13 +10,13 @@ export type JustDiff = Array<Diff>
 
 export type DiffType = "class" | "style" | "dom"
 
-export type ElementDiff = HastNode | JustElementHastNode | undefined
+export type ElementDiff = HastNode | JustRootHastNode | JustElementHastNode | undefined
 export type ElementDiffs = {
   from?: ElementDiff
   to?: ElementDiff
 }
 
-interface Info {
+export interface Info {
   type: DiffType,
   elementDiffs: ElementDiffs | null,
   from?: HastNode | undefined,
@@ -64,24 +64,37 @@ export type Data = {
   mergeIdList: string[];
 }
 
+type JustRootHastNode = {
+  type: HastRoot['type']
+}
+
 export type JustElementHastNode = {
   type: HastElement['type'];
   tagName: HastElement['tagName'];
   properties?: HastElement['properties'];
   content?: HastElement['content'];
-} | {
-  type: HastRoot['type']
+  styles?: CSSStyle[];
+}
+
+export type CSSStyle = {
+  property: string,
+  value: string
 }
 
 export type Methods = {
   setIdToAllElements: (pathName: string) => void;
-  getEventInfo: (event?: Event) => EventInfo | undefined;
   createHastHistory: (type: EVENT_TYPES, event?: Event) => void;
+  getEventInfo: (event?: Event) => EventInfo | undefined;
   createAndSaveDiff: () => void;
   createJsonFile: (pathName: string) => void;
   convertDiffAndInfos: (diffs: JustDiff, fromHast: HastNode, toHast: HastNode) => DiffAndInfos;
+  uniqueDiffAndInfos: (diffAndInfos: DiffAndInfos) => DiffAndInfos;
+  addStylesFromDiffAndInfos: (diffAndInfos: DiffAndInfos) => DiffAndInfos;
+  addStylesFromElementDiffs:(elem: ElementDiff) => ElementDiff;
+  getIdFromElementDiffs: (elem: ElementDiff) => string | null;
   checkDiffType: (diff: Diff) => DiffType;
   getFrom: (diff: Diff, fromHast: HastNode ) => HastNode | undefined;
   getElementDiffs: (diff: Diff, fromHast: HastNode, toHast: HastNode) => ElementDiffs | null;
-  getJustElementHast: (hast: HastNode, path: Diff['path']) => JustElementHastNode | HastNode | undefined;
+  getJustElementHast: (hast: HastNode, path: Diff['path']) => ElementDiff;
+  getStyles: (element: HTMLElement) => CSSStyle[];
 }
