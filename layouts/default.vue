@@ -78,6 +78,11 @@ export default {
         },
         {
           icon: 'mdi-chart-bubble',
+          title: 'checkPercent',
+          to: '/checkPercent',
+        },
+        {
+          icon: 'mdi-chart-bubble',
           title: 'Inspire',
           to: '/inspire',
         },
