@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-btn @click="checkProperty">click!</v-btn>
     <div class="mx-6">
       <p> diffCount {{diffCount}} </p>
       <p> changeStyleCount  {{changeStyleCount}} | {{ changeStyleCount / allCount  * 100}}%</p>
@@ -9,23 +10,42 @@
       <p> allCount {{allCount}} </p>
     </div>
     <div class="mx-6">
-      <p> allCssProperties {{allCssProperties}} </p>
-      <div v-for="prop in sortedCssProperties" :key="prop.propety">
-        <span>{{prop.propety}}</span>：<span>{{prop.count}}</span> | <span>{{prop.count / allCssCount * 100}}%</span>
-      </div>
+      <p> allCssProperties {{allCssProperties}}, {{allCssCount}}</p>
+      <v-simple-table>
+        <template v-slot:default>
+          <thead>
+            <tr>
+              <th class="text-left">
+                プロパティ
+              </th>
+              <th class="text-left">
+                更新回数
+              </th>
+              <th class="text-left">
+                出現率
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="prop in sortedCssProperties" :key="prop.property">
+              <td>{{prop.property}}</td>
+              <td>{{prop.count}}</td>
+              <td>{{orgRound(prop.count / allCssCount * 100, 100)}}%</td>
+            </tr>
+          </tbody>
+        </template>
+      </v-simple-table>
     </div>
   </div>
 </template>
 
 <script>
-import fileNameList from '@/assets/fileNameList.json'
-
-// const cssProperties = [
-//   {
-//     propety: '',
-//     count: 0,
-//   }
-// ]
+import Vue from 'vue'
+import { get } from 'lodash'
+import json1 from '@/assets/json/diffHistories-signin-comp02.json'
+import json2 from '@/assets/json/diffHistories-signin-comp04.json'
+import { diff as justDiff } from 'just-diff'
+const cssProperties = require('css-properties')
 
 export default {
   name: 'checkPercent',
@@ -37,52 +57,140 @@ export default {
       deleteDomCount: 0,
       changeDomCount: 0,
       allCssProperties: 0,
-      cssProperties: []
+      countedProperties: []
     }
   },
   computed: {
     allCount() {
-      return this.changeStyleCount + this.addDomCount + this.deleteDomCount
+      return this.changeStyleCount + this.addDomCount + this.deleteDomCount + this.changeDomCount
     },
     allCssCount() {
-      const reducer = (sum, currentValue) => sum.count + currentValue.count
-      return cssProperties.reduce(reducer)
+      const array = this.countedProperties
+      let count = 0
+      for (let i = 0; i < array.length; i++) {
+        count += array[i].count
+      }
+      return count
     },
     sortedCssProperties() {
-      return this.cssProperties.sort((a, b) => b.count - a.count);
+      return this.countedProperties.sort((a, b) => b.count - a.count);
     },
   },
   mounted() {
-    const json = '{"diffHistories":true, "cssPropeties":42}';
-    this.openJson(json);
+    // const json = '{"diffHistories":true, "cssPropeties":42}';
+    this.openJsonHistory(json1);
+    this.openJsonHistory(json2);
     // this.openJson(fileNameList);
   },
   methods: {
-    openJson(json) {
-      const obj = JSON.parse(json);
-      const { diffHistories, cssPropeties } = obj
+    orgRound(value, base) {
+      return Math.round(value * base) / base;
+    },
+    checkProperty() {
+      this.openJsonCssPropeties(json1);
+      this.openJsonCssPropeties(json2);
+    },
+    openJsonHistory(json) {
+      const obj = JSON.parse(JSON.stringify(json));
+      const { diffHistories } = obj
 
       this.openDiffHistories(diffHistories)
-      this.openCssPropeties(cssPropeties)
+    },
+    openJsonCssPropeties(json) {
+      const obj = JSON.parse(JSON.stringify(json));
+      const { allElementStylesPerDiff } = obj
+
+      this.openCssPropeties(allElementStylesPerDiff)
     },
     openDiffHistories(diffHistories) {
-      diffHistories.forEach((diffHistory) => {
-        const info = diffHistory.diffAndInfos
-        if (!info) return;
-        switch (info.type) {
-          case 'class':
-          case 'style':
-            this.changeStyleCount++
-            break;
-          case 'dom':
-            this.domChanges(info.elementDiffs)
+      for (let i = 0; i < diffHistories.length; i++) {
+        const infos = diffHistories[i].diffAndInfos;
+        if (!infos) continue;
+        infos.forEach(info => {
+          switch (info.type) {
+            case 'class':
+            case 'style':
+              this.changeStyleCount++
+              break;
+            case 'dom':
+              this.domChanges(info.elementDiffs)
+            default:
+              break;
+          }
+        });
+      }
+    },
+    openCssPropeties(allElementStylesPerDiff) {
+      const styleDiffs = []
+      for (let i = 0; i < allElementStylesPerDiff.length - 1; i++) {
+        const props1 = allElementStylesPerDiff[i];
+        const props2 = allElementStylesPerDiff[i + 1];
+        const diffs = justDiff(props1, props2)
+        const filteredDiffs = diffs.filter((diff) => {
+          return diff.op === 'replace'
+        })
+        const diffAndStyle = filteredDiffs.map((diff) => {
+          const { path } = diff
+          const lastPath = path.slice(0, path.length - 1)
+          const style = get(props2, lastPath)
+          return {
+            ...diff,
+            property: style.property
+          }
+        })
+        styleDiffs.push(...diffAndStyle)
+        console.log(styleDiffs)
+      }
+      console.log('styleDiffs',styleDiffs)
+
+      const filteredCssProperties = cssProperties.filter((prop) => {
+        switch (prop) {
+          case 'border-bottom':
+          case 'border-left':
+          case 'border-right':
+          case 'border-top':
+          case 'border-bottom-color':
+          case 'border-left-color':
+          case 'border-right-color':
+          case 'border-top-color':
+          case 'text-decoration-color':
+          case 'column-rule-color':
+          case 'outline-color':
+          case 'margin':
+          case 'padding':
+          case 'border-top-left-radius':
+          case 'border-top-right-radius':
+          case 'border-bottom-left-radius':
+          case 'border-bottom-right-radius':
+          case 'overflow':
+          case 'border-bottom-width':
+          case 'border-top-width':
+          case 'border-right-width':
+          case 'border-left-width':
+          case 'border-bottom-style':
+          case 'border-left-style':
+          case 'border-right-style':
+          case 'border-top-style':
+          case 'list-style-type':
+            return false
           default:
+            return true
             break;
         }
       })
-    },
-    openCssPropeties(cssPropeties) {
 
+      this.allCssProperties = filteredCssProperties.length
+      const countedProperties = filteredCssProperties.map((property) => {
+        const filteredStyleDiffs = styleDiffs.filter((diff) => {
+          return diff.property === property
+        })
+        const count = filteredStyleDiffs.length
+        return {
+          property,
+          count,
+        }
+      })
+      this.countedProperties = countedProperties
     },
     domChanges(elementDiffs) {
       const to = elementDiffs.to

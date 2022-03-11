@@ -101,6 +101,11 @@ export default {
           title: 'SignIn 03',
           to: '/signin/comp03',
         },
+        {
+          icon: 'mdi-chart-bubble',
+          title: 'SignIn 04',
+          to: '/signin/comp04',
+        },
       ],
       miniVariant: false,
       right: true,

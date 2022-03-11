@@ -1,5 +1,5 @@
 <template>
-  <v-row justify="center" align="center">
+  <v-row justify="center" align="center" id="check-component">
 
     <div class="text-center">
       <v-bottom-sheet v-model="sheet" inset>

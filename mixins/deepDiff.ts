@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import { get, has } from 'lodash'
+import { get } from 'lodash'
 import { fromDom } from 'hast-util-from-dom'
 
 import { diff as justDiff } from 'just-diff'
@@ -16,32 +16,40 @@ import {
   DiffType,
   Diff,
   ElementDiffs,
-  JustElementHastNode,
   EventInfo,
   CSSStyle,
-  Info,
   ElementDiff,
+  elementStyle,
 } from './deepDiffType'
 import { HastElement, HastNode } from 'hast-util-from-dom/lib'
-import cssProperties from 'css-properties'
+const cssProperties = require('css-properties')
 
 const ROOT_ELEMENT_ID = 'check-component'
 
 export default Vue.extend<Data, Methods, {}, {}>({
   data(): Data {
     return {
+      rootElement: null,
       hastHistories: [],
       diffHistories: [],
       pathName: '',
       mergeIdList: [],
+      allElementStylesPerDiff: [],
+      allElementStyleDiffs: [],
     }
   },
 
   mounted() {
     const pathName = location.pathname.replaceAll('/', '-')
-    console.log(pathName)
+    const rootElement = document.getElementById(ROOT_ELEMENT_ID)
+    if(rootElement === null) {
+      console.log('Error! not exist root element!');
+      return;
+    }
     this.pathName = pathName
-    this.setIdToAllElements(pathName)
+    this.rootElement = rootElement
+    this.setIdToAllElements(pathName, rootElement)
+    this.setAllElementStyles(rootElement)
     this.createHastHistory(EVENT.First)
 
     window.addEventListener(
@@ -74,22 +82,38 @@ export default Vue.extend<Data, Methods, {}, {}>({
   },
 
   methods: {
-    setIdToAllElements(pathName: string) {
-      const rootElement: HTMLElement | null =
-        document.getElementById(ROOT_ELEMENT_ID)
-      if (!rootElement) return
+    sleep(ms: number): Promise<unknown> {
+      const sleep = new Promise((resolve: (value: unknown) => void) => setTimeout(resolve, ms));
+      return sleep
+    },
+
+    setIdToAllElements(pathName: string, rootElement: HTMLElement) {
       rootElement.querySelectorAll('*').forEach((node, index) => {
-        if (node.id) return
+        if (node.id) return;
+        
         const id = `ReReUiTestId${pathName}-${String(index)}-${node.tagName}`
-        node.setAttribute('id', id)
+        node.setAttribute('id', id);
       })
     },
 
-    createHastHistory(type: EVENT_TYPES, event?: Event) {
-      const rootElement: HTMLElement | null =
-        document.getElementById(ROOT_ELEMENT_ID)
+    setAllElementStyles(rootElement: HTMLElement) {
+      const allElement = Array.from(rootElement.querySelectorAll('*'))
+      const allElementStyles = allElement.map((node: Element) => {
+        return this.getElementStyle(node, node.id)
+      })
+      this.allElementStylesPerDiff.push(allElementStyles)
+    },
 
-      if (!rootElement) {
+    getElementStyle(elem: Element, id: string): elementStyle {
+      const styles = this.getStyles(elem)
+      return { id, styles }
+    },
+
+    async createHastHistory(type: EVENT_TYPES, event?: Event) {
+      console.log('sleeping...')
+      await this.sleep(1000);
+
+      if (!this.rootElement) {
         const text = 'Error in createHastHistory: id "check-component" is null.'
         const error: Error = { text }
         console.log(text)
@@ -98,10 +122,11 @@ export default Vue.extend<Data, Methods, {}, {}>({
       }
 
       const eventInfo = this.getEventInfo(event)
-      const hast = fromDom(rootElement)
+      const hast = fromDom(this.rootElement)
       const hastHistory: HastHistory = { type, hast, eventInfo }
       this.hastHistories.push(hastHistory)
       this.createAndSaveDiff()
+      this.setAllElementStyles(this.rootElement)
     },
 
     getEventInfo(event?: Event): EventInfo | undefined {
@@ -144,6 +169,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
           diffAndInfos,
         }
         this.diffHistories.push(diffHistory)
+        console.log('SAVE DONE!')
         return
       }
 
@@ -154,11 +180,16 @@ export default Vue.extend<Data, Methods, {}, {}>({
         diffAndInfos: null,
       }
       this.diffHistories.push(errorHistory)
+      console.log('SAVE DONE! (first errer)')
     },
 
     createJsonFile(pathName: string) {
-      const jsonHistories = JSON.stringify(this.diffHistories, null, '  ')
-      const blob = new Blob([jsonHistories], {
+      const obj = {
+        diffHistories: this.diffHistories,
+        allElementStylesPerDiff: this.allElementStylesPerDiff
+      }
+      const json = JSON.stringify(obj, null, '  ')
+      const blob = new Blob([json], {
         type: 'application/json',
       })
       const link = document.createElement('a')
@@ -182,6 +213,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
           type,
           elementDiffs,
           from,
+          styleDiffs: null,
         }
       })
       // CSSのclass配列のdiffを順不同で検証したいので、同じidのDOMが存在する場合マージする
@@ -213,7 +245,9 @@ export default Vue.extend<Data, Methods, {}, {}>({
         const to = this.addStylesFromElementDiffs(toDiff)
         const from = this.addStylesFromElementDiffs(fromDiff)
         const elementDiffs = { to, from }
-        const diffWithStyles = { ...diff, elementDiffs }
+        const styleDiffs = this.getStyleDiffs(to, from);
+        console.log('styleDiffs', styleDiffs)
+        const diffWithStyles = { ...diff, elementDiffs, styleDiffs, }
         return diffWithStyles
       })
     },
@@ -233,8 +267,17 @@ export default Vue.extend<Data, Methods, {}, {}>({
 
     getIdFromElementDiffs(elem: ElementDiff): string | null {
       // todo: 説明変数化（なぜか変数にすると型推論が効かなくなる）
-      if (!elem || !('properties' in elem) || !elem.properties) return null
+      if (!elem || !('properties' in elem) || elem.properties === undefined) return null
       return elem.properties.id as string
+    },
+
+    getStyleDiffs(to: ElementDiff, from: ElementDiff): JustDiff | null {
+      console.log(to, from)
+      if (!to || !('styles' in to) || to.styles === undefined) return null
+      if (!from || !('styles' in from) || from.styles  === undefined) return null
+      console.log(to.styles, from.styles)
+      const styleDiffs = justDiff(to.styles, from.styles)
+      return styleDiffs;
     },
 
     checkDiffType(diff: Diff): DiffType {
@@ -286,7 +329,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
       return lastHast
     },
 
-    getStyles(element: HTMLElement): CSSStyle[] {
+    getStyles(element: Element): CSSStyle[] {
       const compStyles = window.getComputedStyle(element)
       const styles = cssProperties as string[]
       return styles.map((property) => {
