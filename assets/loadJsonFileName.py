@@ -1,3 +1,5 @@
+# jsonフォルダ内のjsonファイルの名前の配列を作って書き出す
+
 import pathlib
 import json
 
