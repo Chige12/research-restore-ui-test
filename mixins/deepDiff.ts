@@ -90,8 +90,9 @@ export default Vue.extend<Data, Methods, {}, {}>({
     setIdToAllElements(pathName: string, rootElement: HTMLElement) {
       rootElement.querySelectorAll('*').forEach((node, index) => {
         if (node.id) return;
-        
-        const id = `ReReUiTestId${pathName}-${String(index)}-${node.tagName}`
+
+        const random = Math.random().toString(32).substring(2)
+        const id = `ReReUiTestId${pathName}-${node.tagName}-${random}`
         node.setAttribute('id', id);
       })
     },
@@ -110,9 +111,6 @@ export default Vue.extend<Data, Methods, {}, {}>({
     },
 
     async createHastHistory(type: EVENT_TYPES, event?: Event) {
-      console.log('sleeping...')
-      await this.sleep(1000);
-
       if (!this.rootElement) {
         const text = 'Error in createHastHistory: id "check-component" is null.'
         const error: Error = { text }
@@ -120,6 +118,8 @@ export default Vue.extend<Data, Methods, {}, {}>({
         this.hastHistories.push(error)
         return
       }
+      const pathName = location.pathname.replaceAll('/', '-')
+      this.setIdToAllElements(pathName, this.rootElement)
 
       const eventInfo = this.getEventInfo(event)
       const hast = fromDom(this.rootElement)
