@@ -104,6 +104,17 @@ export default {
     },
     openDiffHistories(diffHistories) {
       for (let i = 0; i < diffHistories.length; i++) {
+        const to = diffHistories[i].to
+        const from = diffHistories[i].from
+        if (!!to && !!from) {
+          const { eventInfo, hast: toHast } = to
+          const { hast: fromHast } = from
+          if (!eventInfo) continue;
+          const id = eventInfo.eventId
+          // const toPath = this.findPath(toHast, id)
+          // const fromPath = this.findPath(fromHast, id)
+          this.changeRootElement(toHast, id)
+        }
         const infos = diffHistories[i].diffAndInfos;
         if (!infos) continue;
         infos.forEach(info => {
@@ -119,6 +130,75 @@ export default {
           }
         });
       }
+    },
+    changeRootElement(hast, id, level){
+      const path = this.findPath(hast, id)
+      path.pop()
+
+      const elementAndPathArr = this.getNewRootPathElements(hast, path)
+      console.log('elementAndPathArr',elementAndPathArr)
+      const elementArrChildDeleted = this.deleteChildPropertyByElement(elementAndPathArr)
+      console.log(elementArrChildDeleted)
+      // この配列を逆順に（子供側から順に）親をつなげていく
+    },
+    deleteChildPropertyByElement(elementAndPathArr){
+      let newElem = []
+      for (let i = 0; i < elementAndPathArr.length - 1; i++) {
+        const elem = elementAndPathArr[i].element
+        const property = elementAndPathArr[i +1].path.slice(-1)[0]
+        elem[property] = null
+        newElem.push(elem)
+      }
+      return newElem
+    },
+    getNewRootPathElements(element, path){
+      let moreDeepElement = element
+      let elementAndPathArr = []
+      for (let i = 0; i < path.length; i++) {
+        moreDeepElement = moreDeepElement[path[i]];
+        const newPath = path.slice(0, i+1)
+        const elementAndPath = {
+          element: moreDeepElement,
+          path: [...newPath],
+        }
+        elementAndPathArr.push(elementAndPath)
+      }
+      return elementAndPathArr
+    },
+    findPath (ob, value) {
+      const key = 'id'
+      const path = [];
+      const keyExists = (obj) => {
+        if (!obj || (typeof obj !== "object" && !Array.isArray(obj))) {
+          return false;
+        }
+        else if (obj.hasOwnProperty(key) && obj[key] === value) {
+          return true;
+        }
+        else if (Array.isArray(obj)) {
+          for (let i = 0; i < obj.length; i++) {
+            const result = keyExists(obj[i], key);
+            if (result) {
+              path.push(i);
+              return result;
+            }
+          }
+        }
+        else {
+          for (const k in obj) {
+            const result = keyExists(obj[k], key);
+            if (result) {
+              path.push(k);
+              return result;
+            }
+          }
+        }
+        return false;
+      };
+
+      keyExists(ob);
+
+      return path.reverse();
     },
     openCssPropeties(allElementStylesPerDiff) {
       const styleDiffs = []
