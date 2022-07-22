@@ -41,7 +41,7 @@
 
 <script>
 import Vue from 'vue'
-import { get } from 'lodash'
+import { get, cloneDeep } from 'lodash'
 import json1 from '@/assets/json/diffHistories-signin-comp02.json'
 import json2 from '@/assets/json/diffHistories-signin-comp04.json'
 import { diff as justDiff } from 'just-diff'
@@ -110,10 +110,12 @@ export default {
           const { eventInfo, hast: toHast } = to
           const { hast: fromHast } = from
           if (!eventInfo) continue;
+
           const id = eventInfo.eventId
-          // const toPath = this.findPath(toHast, id)
-          // const fromPath = this.findPath(fromHast, id)
-          this.changeRootElement(toHast, id)
+          if (!id) console.log('ID is noting!', id)
+
+          const toNewRootHast = this.getNewRootPathElements(toHast, id)
+          const fromNewRootHast = this.getNewRootPathElements(fromHast, id)
         }
         const infos = diffHistories[i].diffAndInfos;
         if (!infos) continue;
@@ -131,48 +133,55 @@ export default {
         });
       }
     },
-    changeRootElement(hast, id, level){
-      const path = this.findPath(hast, id)
-      path.pop()
+    getNewRootPathElements(hast, newRootId){
+      const generateElementsDeletedChildArr = (element, pathArr) => {
+        const elementsDeleteChildArr = pathArr.map((_path, index, arr) => {
+          const deleteChildPath = arr.slice(0, index+2)
+          const deleteChildProperty = deleteChildPath.slice(-1)[0] //最後だけ取得
+          const deleteChildElement = cloneDeep(get(element, deleteChildPath.slice(0, -1))); //最後だけ除いて取得
+          // 親を示す際に、自分が含まれてしまうので消去し、兄弟だけにする。
+          if (deleteChildProperty !== 'properties') {
+            deleteChildElement[deleteChildProperty] = 'me'
+          }
+          return deleteChildElement
+        })
+        // 最後同じオブジェクトが続いてしまうので消去
+        return elementsDeleteChildArr.slice(0, -1)
+      }
 
-      const elementAndPathArr = this.getNewRootPathElements(hast, path)
-      console.log('elementAndPathArr',elementAndPathArr)
-      const elementArrChildDeleted = this.deleteChildPropertyByElement(elementAndPathArr)
-      console.log(elementArrChildDeleted)
-      // この配列を逆順に（子供側から順に）親をつなげていく
-    },
-    deleteChildPropertyByElement(elementAndPathArr){
-      let newElem = []
-      for (let i = 0; i < elementAndPathArr.length - 1; i++) {
-        const elem = elementAndPathArr[i].element
-        const property = elementAndPathArr[i +1].path.slice(-1)[0]
-        elem[property] = null
-        newElem.push(elem)
-      }
-      return newElem
-    },
-    getNewRootPathElements(element, path){
-      let moreDeepElement = element
-      let elementAndPathArr = []
-      for (let i = 0; i < path.length; i++) {
-        moreDeepElement = moreDeepElement[path[i]];
-        const newPath = path.slice(0, i+1)
-        const elementAndPath = {
-          element: moreDeepElement,
-          path: [...newPath],
+      const generateNewRootPathElementsByArr = (elemArr) => {
+        let newElement = {}
+        for (let i = 0; i < elemArr.length; i++) {
+          const element = cloneDeep(elemArr[i])
+          if (i === 0) {
+            newElement = element
+          } else {
+            if(Array.isArray(element)) {
+              newElement.brothers = element
+            } else {
+              element.parent = newElement
+              newElement = cloneDeep(element)
+            }
+          }
         }
-        elementAndPathArr.push(elementAndPath)
+        return newElement
       }
-      return elementAndPathArr
+
+      const pathToRoot = this.getPathById(hast, newRootId)
+      const elementsDeleteChildArr = generateElementsDeletedChildArr(hast, pathToRoot)
+      const newRootPathElements = generateNewRootPathElementsByArr(elementsDeleteChildArr)
+      console.log(newRootPathElements)
+      return newRootPathElements
     },
-    findPath (ob, value) {
+    getPathById (hast, elementId) {
+      // 特定のエレメントのIDを検索してそのエレメントまでのpathを返す
       const key = 'id'
       const path = [];
       const keyExists = (obj) => {
         if (!obj || (typeof obj !== "object" && !Array.isArray(obj))) {
           return false;
         }
-        else if (obj.hasOwnProperty(key) && obj[key] === value) {
+        else if (obj.hasOwnProperty(key) && obj[key] === elementId) {
           return true;
         }
         else if (Array.isArray(obj)) {
@@ -196,8 +205,7 @@ export default {
         return false;
       };
 
-      keyExists(ob);
-
+      keyExists(hast);
       return path.reverse();
     },
     openCssPropeties(allElementStylesPerDiff) {
