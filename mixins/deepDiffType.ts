@@ -1,9 +1,11 @@
 import { HastNode, HastElement, HastRoot } from 'hast-util-from-dom/lib';
 
 export type Operation = "add" | "replace" | "remove";
+
+export type Path = Array<string | number>
 export interface Diff { 
   op: Operation; 
-  path: Array<string | number>;
+  path: Path;
   value: any
 }
 export type JustDiff = Array<Diff>

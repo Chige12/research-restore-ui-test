@@ -1,15 +1,16 @@
 import { HastNode } from "hast-util-from-dom/lib"
 import { cloneDeep, get } from "lodash"
+import { Path } from "~/mixins/deepDiffType"
 
 export type newRootElement = HastNode & {
   brothers?: newRootElement,
   parent?: newRootElement,
 }
 
-const getPathById = (hast: HastNode, elementId: string): string[] => {
+const getPathById = (hast: HastNode, elementId: string): Path => {
   // 特定のエレメントのIDを検索してそのエレメントまでのpathを返す
   const key: string = 'id'
-  const path: string[] = [];
+  const path: Path = [];
   const keyExists = (obj: any, key: string): boolean => {
     if (!obj || (typeof obj !== "object" && !Array.isArray(obj))) {
       return false;
@@ -42,7 +43,7 @@ const getPathById = (hast: HastNode, elementId: string): string[] => {
   return path.reverse();
 }
 
-const generateElementsDeletedChildArr = (element: HastNode, pathArr: string[]) => {
+const generateElementsDeletedChildArr = (element: HastNode, pathArr: Path) => {
   const elementsDeleteChildArr = pathArr.map((_path, index, arr) => {
     const deleteChildPath = arr.slice(0, index+2)
     const deleteChildProperty = deleteChildPath.slice(-1)[0] //配列の最後だけ取得
