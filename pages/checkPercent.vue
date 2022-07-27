@@ -45,6 +45,7 @@ import { get, cloneDeep } from 'lodash'
 import json1 from '@/assets/json/diffHistories-signin-comp02.json'
 import json2 from '@/assets/json/diffHistories-signin-comp04.json'
 import { diff as justDiff } from 'just-diff'
+import { getNewRootPathElements } from '@/utils/getNewRootPathElements'
 const cssProperties = require('css-properties')
 
 export default {
@@ -114,8 +115,10 @@ export default {
           const id = eventInfo.eventId
           if (!id) console.log('ID is noting!', id)
 
-          const toNewRootHast = this.getNewRootPathElements(toHast, id)
-          const fromNewRootHast = this.getNewRootPathElements(fromHast, id)
+          const toNewRootHast = getNewRootPathElements(toHast, id)
+          const fromNewRootHast = getNewRootPathElements(fromHast, id)
+          const diff = justDiff(toNewRootHast, fromNewRootHast)
+          console.log(diff)
         }
         const infos = diffHistories[i].diffAndInfos;
         if (!infos) continue;
@@ -132,81 +135,6 @@ export default {
           }
         });
       }
-    },
-    getNewRootPathElements(hast, newRootId){
-      const generateElementsDeletedChildArr = (element, pathArr) => {
-        const elementsDeleteChildArr = pathArr.map((_path, index, arr) => {
-          const deleteChildPath = arr.slice(0, index+2)
-          const deleteChildProperty = deleteChildPath.slice(-1)[0] //最後だけ取得
-          const deleteChildElement = cloneDeep(get(element, deleteChildPath.slice(0, -1))); //最後だけ除いて取得
-          // 親を示す際に、自分が含まれてしまうので消去し、兄弟だけにする。
-          if (deleteChildProperty !== 'properties') {
-            deleteChildElement[deleteChildProperty] = 'me'
-          }
-          return deleteChildElement
-        })
-        // 最後同じオブジェクトが続いてしまうので消去
-        return elementsDeleteChildArr.slice(0, -1)
-      }
-
-      const generateNewRootPathElementsByArr = (elemArr) => {
-        let newElement = {}
-        for (let i = 0; i < elemArr.length; i++) {
-          const element = cloneDeep(elemArr[i])
-          if (i === 0) {
-            newElement = element
-          } else {
-            if(Array.isArray(element)) {
-              newElement.brothers = element
-            } else {
-              element.parent = newElement
-              newElement = cloneDeep(element)
-            }
-          }
-        }
-        return newElement
-      }
-
-      const pathToRoot = this.getPathById(hast, newRootId)
-      const elementsDeleteChildArr = generateElementsDeletedChildArr(hast, pathToRoot)
-      const newRootPathElements = generateNewRootPathElementsByArr(elementsDeleteChildArr)
-      console.log(newRootPathElements)
-      return newRootPathElements
-    },
-    getPathById (hast, elementId) {
-      // 特定のエレメントのIDを検索してそのエレメントまでのpathを返す
-      const key = 'id'
-      const path = [];
-      const keyExists = (obj) => {
-        if (!obj || (typeof obj !== "object" && !Array.isArray(obj))) {
-          return false;
-        }
-        else if (obj.hasOwnProperty(key) && obj[key] === elementId) {
-          return true;
-        }
-        else if (Array.isArray(obj)) {
-          for (let i = 0; i < obj.length; i++) {
-            const result = keyExists(obj[i], key);
-            if (result) {
-              path.push(i);
-              return result;
-            }
-          }
-        }
-        else {
-          for (const k in obj) {
-            const result = keyExists(obj[k], key);
-            if (result) {
-              path.push(k);
-              return result;
-            }
-          }
-        }
-        return false;
-      };
-
-      keyExists(hast);
-      return path.reverse();
     },
     openCssPropeties(allElementStylesPerDiff) {
       const styleDiffs = []
