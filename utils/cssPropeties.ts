@@ -96,19 +96,6 @@ export const countChanges = (infos: DiffAndInfos) => {
   let changeDomCount: number = 0
   let changeStyleCount: number = 0
 
-  infos.forEach((info) => {
-    switch (info.type) {
-      case 'class':
-      case 'style':
-        changeStyleCount++
-        break
-      case 'dom':
-        info.elementDiffs && domChanges(info.elementDiffs)
-      default:
-        break
-    }
-  })
-
   const domChanges = (elementDiffs: ElementDiffs) => {
     const to = elementDiffs.to
     const from = elementDiffs.from
@@ -129,6 +116,19 @@ export const countChanges = (infos: DiffAndInfos) => {
       removeDomCount++
     }
   }
+
+  infos.forEach((info) => {
+    switch (info.type) {
+      case 'class':
+      case 'style':
+        changeStyleCount++
+        break
+      case 'dom':
+        info.elementDiffs && domChanges(info.elementDiffs)
+      default:
+        break
+    }
+  })
 
   return {
     removeDomCount,
