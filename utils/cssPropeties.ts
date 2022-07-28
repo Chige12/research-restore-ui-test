@@ -91,10 +91,10 @@ export const getStyleDiffs = (
 }
 
 export const countChanges = (infos: DiffAndInfos) => {
-  let removeDomCount: number = 0
-  let addDomCount: number = 0
-  let changeDomCount: number = 0
-  let changeStyleCount: number = 0
+  let removeDomCount = 0
+  let addDomCount = 0
+  let changeDomCount = 0
+  let changeStyleCount = 0
 
   const domChanges = (elementDiffs: ElementDiffs) => {
     const to = elementDiffs.to

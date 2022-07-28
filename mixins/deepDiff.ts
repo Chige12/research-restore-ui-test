@@ -3,6 +3,7 @@ import { get } from 'lodash'
 import { fromDom } from 'hast-util-from-dom'
 
 import { diff as justDiff } from 'just-diff'
+import { HastElement, HastNode } from 'hast-util-from-dom/lib'
 import {
   HastHistory,
   DiffHistory,
@@ -21,7 +22,6 @@ import {
   ElementDiff,
   elementStyle,
 } from './deepDiffType'
-import { HastElement, HastNode } from 'hast-util-from-dom/lib'
 const cssProperties = require('css-properties')
 
 const ROOT_ELEMENT_ID = 'check-component'
@@ -42,9 +42,9 @@ export default Vue.extend<Data, Methods, {}, {}>({
   mounted() {
     const pathName = location.pathname.replaceAll('/', '-')
     const rootElement = document.getElementById(ROOT_ELEMENT_ID)
-    if(rootElement === null) {
-      console.log('Error! not exist root element!');
-      return;
+    if (rootElement === null) {
+      console.log('Error! not exist root element!')
+      return
     }
     this.pathName = pathName
     this.rootElement = rootElement
@@ -64,11 +64,11 @@ export default Vue.extend<Data, Methods, {}, {}>({
     )
   },
 
-  beforeDestroy(): void {
+  beforeUnmount(): void {
     this.createJsonFile(this.pathName)
   },
 
-  destroyed(): void {
+  unmounted(): void {
     window.removeEventListener(
       'click',
       (e) => this.createHastHistory(EVENT.CLICK, e),
@@ -83,17 +83,19 @@ export default Vue.extend<Data, Methods, {}, {}>({
 
   methods: {
     sleep(ms: number): Promise<unknown> {
-      const sleep = new Promise((resolve: (value: unknown) => void) => setTimeout(resolve, ms));
+      const sleep = new Promise((resolve: (value: unknown) => void) =>
+        setTimeout(resolve, ms)
+      )
       return sleep
     },
 
     setIdToAllElements(pathName: string, rootElement: HTMLElement) {
       rootElement.querySelectorAll('*').forEach((node, index) => {
-        if (node.id) return;
+        if (node.id) return
 
         const random = Math.random().toString(32).substring(2)
         const id = `ReReUiTestId${pathName}-${node.tagName}-${random}`
-        node.setAttribute('id', id);
+        node.setAttribute('id', id)
       })
     },
 
@@ -186,7 +188,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
     createJsonFile(pathName: string) {
       const obj = {
         diffHistories: this.diffHistories,
-        allElementStylesPerDiff: this.allElementStylesPerDiff
+        allElementStylesPerDiff: this.allElementStylesPerDiff,
       }
       const json = JSON.stringify(obj, null, '  ')
       const blob = new Blob([json], {
@@ -229,7 +231,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
         const elem = diff.elementDiffs?.to
         const id = this.getIdFromElementDiffs(elem)
         if (!id) return true
-        const isUnique = !this.mergeIdList.some((item) => item === id)
+        const isUnique = !this.mergeIdList.includes(id)
         if (isUnique) {
           this.mergeIdList.push(id)
           return true
@@ -245,9 +247,9 @@ export default Vue.extend<Data, Methods, {}, {}>({
         const to = this.addStylesFromElementDiffs(toDiff)
         const from = this.addStylesFromElementDiffs(fromDiff)
         const elementDiffs = { to, from }
-        const styleDiffs = this.getStyleDiffs(to, from);
+        const styleDiffs = this.getStyleDiffs(to, from)
         console.log('styleDiffs', styleDiffs)
-        const diffWithStyles = { ...diff, elementDiffs, styleDiffs, }
+        const diffWithStyles = { ...diff, elementDiffs, styleDiffs }
         return diffWithStyles
       })
     },
@@ -261,30 +263,31 @@ export default Vue.extend<Data, Methods, {}, {}>({
       if (!element) return elem
       const styles = this.getStyles(element)
       console.log(styles)
-      const elemWithStyle = { ...elem, styles, } as ElementDiff
+      const elemWithStyle = { ...elem, styles } as ElementDiff
       return elemWithStyle
     },
 
     getIdFromElementDiffs(elem: ElementDiff): string | null {
       // todo: 説明変数化（なぜか変数にすると型推論が効かなくなる）
-      if (!elem || !('properties' in elem) || elem.properties === undefined) return null
+      if (!elem || !('properties' in elem) || elem.properties === undefined)
+        return null
       return elem.properties.id as string
     },
 
     getStyleDiffs(to: ElementDiff, from: ElementDiff): JustDiff | null {
       console.log(to, from)
       if (!to || !('styles' in to) || to.styles === undefined) return null
-      if (!from || !('styles' in from) || from.styles  === undefined) return null
+      if (!from || !('styles' in from) || from.styles === undefined) return null
       console.log(to.styles, from.styles)
       const styleDiffs = justDiff(to.styles, from.styles)
-      return styleDiffs;
+      return styleDiffs
     },
 
     checkDiffType(diff: Diff): DiffType {
       const { path } = diff
-      const isClass = path.some((p) => p === 'className')
+      const isClass = path.includes('className')
       if (isClass) return 'class'
-      const isStyle = path.some((p) => p === 'style')
+      const isStyle = path.includes('style')
       if (isStyle) return 'style'
       return 'dom'
     },

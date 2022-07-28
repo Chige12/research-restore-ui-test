@@ -1,4 +1,4 @@
-import { defineNuxtConfig } from '@nuxt/bridge';
+import { defineNuxtConfig } from '@nuxt/bridge'
 import colors from 'vuetify/es5/util/colors'
 
 export default defineNuxtConfig({

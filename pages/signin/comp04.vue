@@ -1,9 +1,8 @@
 <template>
-  <v-row justify="center" align="center" id="check-component">
-
+  <v-row id="check-component" justify="center" align="center">
     <div class="text-center">
       <v-bottom-sheet v-model="sheet" inset>
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn color="orange" dark v-bind="attrs" v-on="on">
             Open Inset
           </v-btn>
@@ -17,7 +16,7 @@
       </v-bottom-sheet>
     </div>
 
-    <v-switch v-model="showMessages" label="Show messages"></v-switch>
+    <v-switch v-model="showMessages" label="Show messages" />
     <p v-if="showMessages">hogehoge</p>
 
     <v-expansion-panels>
@@ -34,7 +33,7 @@
 
     <div class="text-center">
       <v-dialog v-model="dialog" width="500">
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <v-btn color="red lighten-2" dark v-bind="attrs" v-on="on">
             Click Me
           </v-btn>
@@ -52,9 +51,9 @@
             pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
             culpa qui officia deserunt mollit anim id est laborum.
           </v-card-text>
-          <v-divider></v-divider>
+          <v-divider />
           <v-card-actions>
-            <v-spacer></v-spacer>
+            <v-spacer />
             <v-btn color="primary" text @click="dialog = false">
               I accept
             </v-btn>
@@ -66,28 +65,23 @@
     <v-container fluid>
       <v-row align="center">
         <v-col class="d-flex" cols="12" sm="6">
-          <v-select :items="items" label="Standard"></v-select>
+          <v-select :items="items" label="Standard" />
         </v-col>
         <v-col class="d-flex" cols="12" sm="6">
-          <v-select :items="items" filled label="Filled style"></v-select>
+          <v-select :items="items" filled label="Filled style" />
         </v-col>
         <v-col class="d-flex" cols="12" sm="6">
-          <v-select :items="items" label="Outlined style" outlined></v-select>
+          <v-select :items="items" label="Outlined style" outlined />
         </v-col>
         <v-col class="d-flex" cols="12" sm="6">
-          <v-select :items="items" label="Solo field" solo></v-select>
+          <v-select :items="items" label="Solo field" solo />
         </v-col>
       </v-row>
     </v-container>
 
     <v-container class="px-0" fluid>
       <v-radio-group v-model="radioGroup">
-        <v-radio
-          v-for="n in 3"
-          :key="n"
-          :label="`Radio ${n}`"
-          :value="n"
-        ></v-radio>
+        <v-radio v-for="n in 3" :key="n" :label="`Radio ${n}`" :value="n" />
       </v-radio-group>
     </v-container>
   </v-row>

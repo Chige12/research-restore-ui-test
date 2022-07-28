@@ -1,53 +1,52 @@
-import { HastNode } from "hast-util-from-dom/lib"
-import { cloneDeep, get } from "lodash"
-import { Path } from "~/mixins/deepDiffType"
+import { HastNode } from 'hast-util-from-dom/lib'
+import { cloneDeep, get } from 'lodash'
+import { Path } from '~/mixins/deepDiffType'
 
 export type newRootElement = HastNode & {
-  brothers?: newRootElement,
-  parent?: newRootElement,
+  brothers?: newRootElement
+  parent?: newRootElement
 }
 
 const getPathById = (hast: HastNode, elementId: string): Path => {
   // 特定のエレメントのIDを検索してそのエレメントまでのpathを返す
-  const key: string = 'id'
-  const path: Path = [];
+  const key = 'id'
+  const path: Path = []
   const keyExists = (obj: any, key: string): boolean => {
-    if (!obj || (typeof obj !== "object" && !Array.isArray(obj))) {
-      return false;
-    }
-    else if (obj.hasOwnProperty(key) && obj[key] === elementId) {
-      return true;
-    }
-    else if (Array.isArray(obj)) {
+    if (!obj || (typeof obj !== 'object' && !Array.isArray(obj))) {
+      return false
+    } else if (obj.hasOwnProperty(key) && obj[key] === elementId) {
+      return true
+    } else if (Array.isArray(obj)) {
       for (let i = 0; i < obj.length; i++) {
-        const result = keyExists(obj[i], key);
+        const result = keyExists(obj[i], key)
         if (result) {
-          path.push(i);
-          return result;
+          path.push(i)
+          return result
         }
       }
-    }
-    else {
+    } else {
       for (const k in obj) {
-        const result = keyExists(obj[k], key);
+        const result = keyExists(obj[k], key)
         if (result) {
-          path.push(k);
-          return result;
+          path.push(k)
+          return result
         }
       }
     }
-    return false;
-  };
+    return false
+  }
 
-  keyExists(hast, key);
-  return path.reverse();
+  keyExists(hast, key)
+  return path.reverse()
 }
 
 const generateElementsDeletedChildArr = (element: HastNode, pathArr: Path) => {
   const elementsDeleteChildArr = pathArr.map((_path, index, arr) => {
-    const deleteChildPath = arr.slice(0, index+2)
-    const deleteChildProperty = deleteChildPath.slice(-1)[0] //配列の最後だけ取得
-    const deleteChildElement = cloneDeep(get(element, deleteChildPath.slice(0, -1))); //最後だけ除いて取得
+    const deleteChildPath = arr.slice(0, index + 2)
+    const deleteChildProperty = deleteChildPath.slice(-1)[0] // 配列の最後だけ取得
+    const deleteChildElement = cloneDeep(
+      get(element, deleteChildPath.slice(0, -1))
+    ) // 最後だけ除いて取得
     // 親を示す際に、自分が含まれてしまうので消去し、兄弟だけにする。
     if (deleteChildProperty !== 'properties') {
       deleteChildElement[deleteChildProperty] = 'me'
@@ -58,28 +57,36 @@ const generateElementsDeletedChildArr = (element: HastNode, pathArr: Path) => {
   return elementsDeleteChildArr.slice(0, -1)
 }
 
-const generateNewRootPathElementsByArr = (elemArr: HastNode[]): newRootElement => {
+const generateNewRootPathElementsByArr = (
+  elemArr: HastNode[]
+): newRootElement => {
   let newElement = {} as newRootElement
   for (let i = 0; i < elemArr.length; i++) {
     let element: newRootElement = cloneDeep(elemArr[i])
     if (i === 0) {
       newElement = element
+    } else if (Array.isArray(element)) {
+      newElement = { ...newElement, brothers: element }
     } else {
-      if(Array.isArray(element)) {
-        newElement = { ...newElement, brothers: element }
-      } else {
-        element = { ...element, parent: newElement}
-        newElement = cloneDeep(element)
-      }
+      element = { ...element, parent: newElement }
+      newElement = cloneDeep(element)
     }
   }
   return newElement
 }
 
-export const getNewRootPathElements = (hast: HastNode, newRootId: string): newRootElement => {
+export const getNewRootPathElements = (
+  hast: HastNode,
+  newRootId: string
+): newRootElement => {
   const pathToRoot = getPathById(hast, newRootId)
-  const elementsDeleteChildArr = generateElementsDeletedChildArr(hast, pathToRoot)
-  const newRootPathElements = generateNewRootPathElementsByArr(elementsDeleteChildArr)
+  const elementsDeleteChildArr = generateElementsDeletedChildArr(
+    hast,
+    pathToRoot
+  )
+  const newRootPathElements = generateNewRootPathElementsByArr(
+    elementsDeleteChildArr
+  )
   console.log(newRootPathElements)
   return newRootPathElements
 }
