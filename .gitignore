@@ -90,3 +90,6 @@ sw.*
 *.swp
 
 /assets/json
+
+# Nitro
+.output
