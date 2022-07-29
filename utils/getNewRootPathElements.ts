@@ -1,5 +1,6 @@
 import { HastNode } from 'hast-util-from-dom/lib'
-import { cloneDeep, get } from 'lodash'
+import cloneDeep from 'lodash/cloneDeep'
+import get from 'lodash/get'
 import { Path } from '~/mixins/deepDiffType'
 
 export type newRootElement = HastNode & {

@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import { get } from 'lodash'
+import get from 'lodash/get'
 import { fromDom } from 'hast-util-from-dom'
 
 import { diff as justDiff } from 'just-diff'

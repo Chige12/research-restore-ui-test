@@ -1,4 +1,5 @@
 import { diff as justDiff } from 'just-diff'
+import get from 'lodash/get'
 import cssProperties from 'css-properties'
 import {
   CSSStyle,
