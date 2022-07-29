@@ -1,5 +1,5 @@
 import { diff as justDiff } from 'just-diff'
-import { get } from 'lodash'
+import cssProperties from 'css-properties'
 import {
   CSSStyle,
   Diff,
@@ -7,7 +7,6 @@ import {
   ElementDiffs,
   elementStyle,
 } from '~/mixins/deepDiffType'
-const cssProperties = require('css-properties') as string[]
 
 export type DiffAndStyle = Diff & {
   property: CSSStyle['property']

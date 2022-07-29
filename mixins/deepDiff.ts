@@ -4,6 +4,7 @@ import { fromDom } from 'hast-util-from-dom'
 
 import { diff as justDiff } from 'just-diff'
 import { HastElement, HastNode } from 'hast-util-from-dom/lib'
+import cssProperties from 'css-properties'
 import {
   HastHistory,
   DiffHistory,
@@ -22,7 +23,6 @@ import {
   ElementDiff,
   elementStyle,
 } from './deepDiffType'
-const cssProperties = require('css-properties')
 
 const ROOT_ELEMENT_ID = 'check-component'
 
