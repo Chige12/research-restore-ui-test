@@ -1,4 +1,4 @@
-import { HastNode, HastElement, HastRoot } from 'hast-util-from-dom/lib'
+import { HastElement, HastNode, HastRoot } from 'hast-util-from-dom/lib'
 
 export type Operation = 'add' | 'replace' | 'remove'
 
@@ -89,6 +89,11 @@ export type elementStyle = {
 
 export type StyleDiffs = {
   diff: JustDiff
+}
+
+export type JsonFile = {
+  diffHistories: Array<DiffHistory>
+  allElementStylesPerDiff: elementStyle[][]
 }
 
 export type Data = {

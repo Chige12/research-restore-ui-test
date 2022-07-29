@@ -15,8 +15,8 @@
         {{ (changeDomCount / allCount) * 100 }}%
       </p>
       <p>
-        deleteDomCount {{ deleteDomCount }} |
-        {{ (deleteDomCount / allCount) * 100 }}%
+        removeDomCount {{ removeDomCount }} |
+        {{ (removeDomCount / allCount) * 100 }}%
       </p>
       <p>allCount {{ allCount }}</p>
     </div>
@@ -44,42 +44,55 @@
   </div>
 </template>
 
-<script>
-import Vue from 'vue'
+<script lang="ts">
+import * as fs from 'fs'
+import { defineComponent } from 'vue'
 import { diff as justDiff } from 'just-diff'
-import json1 from '@/assets/json/diffHistories-signin-comp02.json'
-import json2 from '@/assets/json/diffHistories-signin-comp04.json'
 import { getNewRootPathElements } from '@/utils/getNewRootPathElements'
 import {
   countChanges,
   filteredCssProperties,
   getStyleDiffs,
   getCountedProperties,
+  CountedProperties,
 } from '@/utils/cssPropeties'
+import { DiffHistory, HastHistory, JsonFile } from '~/mixins/deepDiffType'
 
-export default {
+type Data = {
+  jsonFileArr: JsonFile[]
+  diffCount: number
+  changeStyleCount: number
+  addDomCount: number
+  removeDomCount: number
+  changeDomCount: number
+  allCssProperties: number
+  countedProperties: CountedProperties
+}
+
+export default defineComponent({
   name: 'CheckPercent',
-  data() {
+  data(): Data {
     return {
+      jsonFileArr: [],
       diffCount: 0,
       changeStyleCount: 0,
       addDomCount: 0,
-      deleteDomCount: 0,
+      removeDomCount: 0,
       changeDomCount: 0,
       allCssProperties: 0,
       countedProperties: [],
     }
   },
   computed: {
-    allCount() {
+    allCount(): number {
       return (
         this.changeStyleCount +
         this.addDomCount +
-        this.deleteDomCount +
+        this.removeDomCount +
         this.changeDomCount
       )
     },
-    allCssCount() {
+    allCssCount(): number {
       const array = this.countedProperties
       let count = 0
       for (let i = 0; i < array.length; i++) {
@@ -87,32 +100,40 @@ export default {
       }
       return count
     },
-    sortedCssProperties() {
-      return this.countedProperties.sort((a, b) => b.count - a.count)
+    sortedCssProperties(): CountedProperties {
+      return [...this.countedProperties].sort((a, b) => b.count - a.count)
     },
   },
   mounted() {
-    // const json = '{"diffHistories":true, "cssPropeties":42}';
-    this.openJsonHistory(json1)
-    this.openJsonHistory(json2)
-    // this.openJson(fileNameList);
+    const json1: JsonFile = JSON.parse(
+      fs
+        .readFileSync('@/assets/json/diffHistories-signin-comp02.json')
+        .toString()
+    )
+    const json2: JsonFile = JSON.parse(
+      fs
+        .readFileSync('@/assets/json/diffHistories-signin-comp04.json')
+        .toString()
+    )
+    this.jsonFileArr = [json1, json2]
+    this.openJsonHistory()
   },
   methods: {
-    orgRound(value, base) {
+    orgRound(value: number, base: number): number {
       return Math.round(value * base) / base
     },
     checkProperty() {
-      this.openJsonCssPropeties(json1)
-      this.openJsonCssPropeties(json2)
+      this.jsonFileArr.forEach((json) => {
+        this.openJsonCssPropeties(json)
+      })
     },
-    openJsonHistory(json) {
-      const obj = JSON.parse(JSON.stringify(json))
-      const { diffHistories } = obj
-
-      this.openDiffHistories(diffHistories)
+    openJsonHistory() {
+      this.jsonFileArr.forEach((json) => {
+        const { diffHistories } = json
+        this.openDiffHistories(diffHistories)
+      })
     },
-    openJsonCssPropeties(json) {
-      const obj = JSON.parse(JSON.stringify(json))
+    openJsonCssPropeties(obj: JsonFile) {
       const { allElementStylesPerDiff } = obj
 
       this.allCssProperties = filteredCssProperties.length
@@ -120,10 +141,10 @@ export default {
       const styleDiffs = getStyleDiffs(allElementStylesPerDiff)
       this.countedProperties = getCountedProperties(styleDiffs)
     },
-    openDiffHistories(diffHistories) {
+    openDiffHistories(diffHistories: Array<DiffHistory>) {
       for (let i = 0; i < diffHistories.length; i++) {
-        const to = diffHistories[i].to
-        const from = diffHistories[i].from
+        const to = diffHistories[i].to as HastHistory
+        const from = diffHistories[i].from as HastHistory
         if (!!to && !!from) {
           const { eventInfo, hast: toHast } = to
           const { hast: fromHast } = from
@@ -142,10 +163,10 @@ export default {
         const changes = countChanges(infos)
         this.changeStyleCount = changes.changeStyleCount
         this.addDomCount = changes.addDomCount
-        this.deleteDomCount = changes.deleteDomCount
+        this.removeDomCount = changes.removeDomCount
         this.changeDomCount = changes.changeDomCount
       }
     },
   },
-}
+})
 </script>

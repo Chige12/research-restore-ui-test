@@ -1,27 +1,28 @@
-import Vue from 'vue'
-import get from 'lodash/get'
 import { fromDom } from 'hast-util-from-dom'
+import get from 'lodash/get'
+import Vue from 'vue'
 
-import { diff as justDiff } from 'just-diff'
-import { HastElement, HastNode } from 'hast-util-from-dom/lib'
 import cssProperties from 'css-properties'
+import { HastElement, HastNode } from 'hast-util-from-dom/lib'
+import { diff as justDiff } from 'just-diff'
 import {
-  HastHistory,
-  DiffHistory,
+  CSSStyle,
   Data,
-  Methods,
+  Diff,
+  DiffAndInfos,
+  DiffHistory,
+  DiffType,
+  ElementDiff,
+  ElementDiffs,
+  elementStyle,
   Error,
   EVENT,
-  EVENT_TYPES,
-  JustDiff,
-  DiffAndInfos,
-  DiffType,
-  Diff,
-  ElementDiffs,
   EventInfo,
-  CSSStyle,
-  ElementDiff,
-  elementStyle,
+  EVENT_TYPES,
+  HastHistory,
+  JsonFile,
+  JustDiff,
+  Methods,
 } from './deepDiffType'
 
 const ROOT_ELEMENT_ID = 'check-component'
@@ -186,7 +187,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
     },
 
     createJsonFile(pathName: string) {
-      const obj = {
+      const obj: JsonFile = {
         diffHistories: this.diffHistories,
         allElementStylesPerDiff: this.allElementStylesPerDiff,
       }

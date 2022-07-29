@@ -50,7 +50,14 @@ export const filteredCssProperties = cssProperties.filter((prop) => {
   }
 })
 
-export const getCountedProperties = (styleDiffs: StyleDiffs) => {
+export type CountedProperties = Array<{
+  property: string
+  count: number
+}>
+
+export const getCountedProperties = (
+  styleDiffs: StyleDiffs
+): CountedProperties => {
   const countedProperties = filteredCssProperties.map((property) => {
     const filteredStyleDiffs = styleDiffs.filter((diff) => {
       return diff.filter((x) => x.property === property)
