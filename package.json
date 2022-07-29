@@ -14,7 +14,7 @@
     "lintfix": "prettier --write --list-different . && yarn lint:js --fix && yarn lint:style --fix"
   },
   "dependencies": {
-    "@types/lodash": "^4.14.178",
+    "@types/lodash": "^4.14.182",
     "core-js": "^3.19.3",
     "css-properties": "^2.0.2",
     "hast-util-from-dom": "^4.1.0",
