@@ -8,6 +8,10 @@ export type newRootElement = HastNode & {
   parent?: newRootElement
 }
 
+const hasProperty = (obj: unknown, key: string) => {
+  return !!obj && Object.prototype.hasOwnProperty.call(obj, key)
+}
+
 const getPathById = (hast: HastNode, elementId: string): Path => {
   // 特定のエレメントのIDを検索してそのエレメントまでのpathを返す
   const key = 'id'
@@ -15,7 +19,7 @@ const getPathById = (hast: HastNode, elementId: string): Path => {
   const keyExists = (obj: any, key: string): boolean => {
     if (!obj || (typeof obj !== 'object' && !Array.isArray(obj))) {
       return false
-    } else if (obj.hasOwnProperty(key) && obj[key] === elementId) {
+    } else if (hasProperty(obj, key) && obj[key] === elementId) {
       return true
     } else if (Array.isArray(obj)) {
       for (let i = 0; i < obj.length; i++) {

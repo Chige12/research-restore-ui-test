@@ -90,7 +90,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
     },
 
     setIdToAllElements(pathName: string, rootElement: HTMLElement) {
-      rootElement.querySelectorAll('*').forEach((node, index) => {
+      rootElement.querySelectorAll('*').forEach((node, _index) => {
         if (node.id) return
 
         const random = Math.random().toString(32).substring(2)
@@ -112,7 +112,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
       return { id, styles }
     },
 
-    async createHastHistory(type: EVENT_TYPES, event?: Event) {
+    createHastHistory(type: EVENT_TYPES, event?: Event) {
       if (!this.rootElement) {
         const text = 'Error in createHastHistory: id "check-component" is null.'
         const error: Error = { text }
@@ -236,6 +236,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
           this.mergeIdList.push(id)
           return true
         }
+        return false
       })
     },
 
@@ -326,7 +327,7 @@ export default Vue.extend<Data, Methods, {}, {}>({
       const lastHast: HastNode = get(hast, path)
       if (!lastHast) return undefined
       if ('children' in lastHast) {
-        const { children, ...justElementHast } = lastHast
+        const { children: _, ...justElementHast } = lastHast
         return justElementHast
       }
       return lastHast

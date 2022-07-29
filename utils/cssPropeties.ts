@@ -120,11 +120,13 @@ export const countChanges = (infos: DiffAndInfos) => {
   infos.forEach((info) => {
     switch (info.type) {
       case 'class':
+      // fall through
       case 'style':
         changeStyleCount++
         break
       case 'dom':
         info.elementDiffs && domChanges(info.elementDiffs)
+        break
       default:
         break
     }

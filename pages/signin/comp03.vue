@@ -3,9 +3,9 @@
     <v-col cols="12" sm="8" md="6">
       <v-card id="check-component" color="#fafafa" elevation="0">
         <h3>サインイン</h3>
-        <label>メール：<input type="email" //></label>
-        <label>パスワード：<input type="password" //></label>
-        <input type="submit" value="サインイン" //>
+        <label>メール：<input type="email" /></label>
+        <label>パスワード：<input type="password" /></label>
+        <input type="submit" value="サインイン" />
       </v-card>
     </v-col>
   </v-row>
