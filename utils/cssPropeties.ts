@@ -1,13 +1,8 @@
+import cssProperties from 'css-properties'
 import { diff as justDiff } from 'just-diff'
 import get from 'lodash/get'
-import cssProperties from 'css-properties'
-import {
-  CSSStyle,
-  Diff,
-  DiffAndInfos,
-  ElementDiffs,
-  elementStyle,
-} from '~/mixins/deepDiffType'
+import { Diff, DiffAndInfos, ElementDiffs, Info } from './recording/diffTypes'
+import { CSSStyle, StylesPerElements } from './recording/styles'
 
 export type DiffAndStyle = Diff & {
   property: CSSStyle['property']
@@ -72,7 +67,7 @@ export const getCountedProperties = (
 }
 
 export const getStyleDiffs = (
-  allElementStylesPerDiff: elementStyle[][]
+  allElementStylesPerDiff: StylesPerElements[]
 ): StyleDiffs => {
   const styleDiffs = [] as StyleDiffs
   for (let i = 0; i < allElementStylesPerDiff.length - 1; i++) {
@@ -104,8 +99,7 @@ export const countChanges = (infos: DiffAndInfos) => {
   let changeStyleCount = 0
 
   const domChanges = (elementDiffs: ElementDiffs) => {
-    const to = elementDiffs.to
-    const from = elementDiffs.from
+    const { to, from } = elementDiffs
     if (to === undefined && from !== undefined) {
       removeDomCount++
       return
@@ -124,7 +118,7 @@ export const countChanges = (infos: DiffAndInfos) => {
     }
   }
 
-  infos.forEach((info) => {
+  infos.forEach((info: Diff & Info) => {
     switch (info.type) {
       case 'class':
       // fall through

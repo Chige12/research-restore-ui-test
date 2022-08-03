@@ -56,7 +56,8 @@ import {
   getCountedProperties,
   CountedProperties,
 } from '@/utils/cssPropeties'
-import { DiffHistory, HastHistory, JsonFile } from '~/mixins/deepDiffType'
+import { JsonFile } from '~/mixins/deepDiffType'
+import { DiffHistory } from '~/utils/recording/diffTypes'
 
 type Data = {
   jsonFileArr: JsonFile[]
@@ -143,8 +144,7 @@ export default defineComponent({
     },
     openDiffHistories(diffHistories: Array<DiffHistory>) {
       for (let i = 0; i < diffHistories.length; i++) {
-        const to = diffHistories[i].to as HastHistory
-        const from = diffHistories[i].from as HastHistory
+        const { to, from } = diffHistories[i]
         if (!!to && !!from) {
           const { eventInfo, hast: toHast } = to
           const { hast: fromHast } = from

@@ -1,91 +1,20 @@
-import { HastElement, HastNode, HastRoot } from 'hast-util-from-dom/lib'
-
-export type Operation = 'add' | 'replace' | 'remove'
-
-export type Path = Array<string | number>
-export interface Diff {
-  op: Operation
-  path: Path
-  value: any
-}
-export type JustDiff = Array<Diff>
-
-export type DiffType = 'class' | 'style' | 'dom'
-
-type JustRootHastNode = {
-  type: HastRoot['type']
-}
-
-export type CSSStyle = {
-  property: string
-  value: string
-}
-
-export type JustElementHastNode = {
-  type: HastElement['type']
-  tagName: HastElement['tagName']
-  properties?: HastElement['properties']
-  content?: HastElement['content']
-  styles?: CSSStyle[]
-}
-
-export type ElementDiff =
-  | HastNode
-  | JustRootHastNode
-  | JustElementHastNode
-  | undefined
-
-export type ElementDiffs = {
-  from?: ElementDiff
-  to?: ElementDiff
-}
-
-export interface Info {
-  type: DiffType
-  elementDiffs: ElementDiffs | null
-  styleDiffs: JustDiff | null
-  from?: HastNode | undefined
-}
-export type Diffs = Array<Diff>
-export type DiffAndInfos = Array<Diff & Info>
-
-export const EVENT = {
-  First: 'first',
-  CLICK: 'click',
-  KEY: 'key',
-} as const
-
-export type EVENT_TYPES = typeof EVENT[keyof typeof EVENT]
-
-export type EventInfo = {
-  event: Event
-  type: string
-  eventHast: HastNode
-  eventId: string
-}
-
-export type HastHistory = {
-  type: EVENT_TYPES
-  hast: HastNode
-  eventInfo?: EventInfo | undefined
-}
-
-export type Error = {
-  text: string
-  log?: unknown
-}
-
-export type DiffHistory = {
-  from: HastHistory | Error
-  to: HastHistory | Error
-  diffs: Diffs | null
-  diffAndInfos: DiffAndInfos | null
-}
-
-export type elementStyle = {
-  id: string
-  styles: CSSStyle[]
-}
+import { HastNode } from 'hast-util-from-dom/lib'
+import {
+  Diff,
+  DiffAndInfos,
+  DiffHistory,
+  DiffType,
+  ElementDiff,
+  ElementDiffs,
+  HastHistory,
+  JustDiff,
+} from '~/utils/recording/diffTypes'
+import { EventInfo, EVENT_TYPES } from '~/utils/recording/eventTypes'
+import {
+  CSSStyle,
+  StylesAndId,
+  StylesPerElements,
+} from '~/utils/recording/styles'
 
 export type StyleDiffs = {
   diff: JustDiff
@@ -93,16 +22,16 @@ export type StyleDiffs = {
 
 export type JsonFile = {
   diffHistories: Array<DiffHistory>
-  allElementStylesPerDiff: elementStyle[][]
+  allElementStylesPerDiff: StylesPerElements[]
 }
 
 export type Data = {
   rootElement: HTMLElement | null
-  hastHistories: Array<HastHistory | Error>
+  hastHistories: Array<HastHistory>
   diffHistories: Array<DiffHistory>
   pathName: string
   mergeIdList: string[]
-  allElementStylesPerDiff: elementStyle[][]
+  allElementStylesPerDiff: StylesPerElements[]
   allElementStyleDiffs: StyleDiffs[]
 }
 
@@ -110,7 +39,7 @@ export type Methods = {
   sleep: (ms: number) => Promise<unknown>
   setIdToAllElements: (pathName: string, rootElement: HTMLElement) => void
   setAllElementStyles: (rootElement: HTMLElement) => void
-  getElementStyle: (elem: Element, id: string) => elementStyle
+  getElementStyle: (elem: Element, id: string) => StylesAndId
   createHastHistory: (type: EVENT_TYPES, event?: Event) => void
   getEventInfo: (event?: Event) => EventInfo | undefined
   createAndSaveDiff: () => void
