@@ -20,7 +20,10 @@ module.exports = {
     'eslint:recommended',
     '@vue/typescript',
     '@vue/typescript/recommended',
+    'plugin:import/warnings',
+    'plugin:import/typescript',
     'prettier',
+    'prettier/@typescript-eslint',
   ],
   plugins: [],
   // add your custom rules here
