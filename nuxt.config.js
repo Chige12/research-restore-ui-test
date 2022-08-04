@@ -36,7 +36,7 @@ export default defineNuxtConfig({
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [],
+  modules: ['@nuxt/content', '@nuxtjs/axios'],
 
   // Vuetify module configuration: https://go.nuxtjs.dev/config-vuetify
   vuetify: {
@@ -58,5 +58,11 @@ export default defineNuxtConfig({
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {},
+  build: {
+    extend(config, ctx) {
+      config.node = {
+        fs: 'empty',
+      }
+    },
+  },
 })

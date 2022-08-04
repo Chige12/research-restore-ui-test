@@ -45,10 +45,9 @@
 </template>
 
 <script lang="ts">
-import * as fs from 'fs'
 import { defineComponent } from 'vue'
 import { diff as justDiff } from 'just-diff'
-import { getNewRootPathElements } from '@/utils/getNewRootPathElements'
+import { getNewRootPathElements, newRootElement } from '@/utils/getNewRootPathElements'
 import {
   countChanges,
   filteredCssProperties,
@@ -57,7 +56,15 @@ import {
   CountedProperties,
 } from '@/utils/cssPropeties'
 import { JsonFile } from '~/mixins/deepDiffType'
-import { DiffHistory } from '~/utils/recording/diffTypes'
+import { Diff, DiffHistory, Diffs } from '~/utils/recording/diffTypes'
+import { createDiffsWithBreadcrumbsPath, DiffWithBreadcrumbsPath } from '~/utils/recording/paths'
+
+type DataHistory = {
+  to: newRootElement
+  from: newRootElement
+  diffs: Diffs
+  diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
+}
 
 type Data = {
   jsonFileArr: JsonFile[]
@@ -68,6 +75,7 @@ type Data = {
   changeDomCount: number
   allCssProperties: number
   countedProperties: CountedProperties
+  histories: DataHistory[]
 }
 
 export default defineComponent({
@@ -82,6 +90,7 @@ export default defineComponent({
       changeDomCount: 0,
       allCssProperties: 0,
       countedProperties: [],
+      histories: [],
     }
   },
   computed: {
@@ -105,18 +114,14 @@ export default defineComponent({
       return [...this.countedProperties].sort((a, b) => b.count - a.count)
     },
   },
-  mounted() {
-    const json1: JsonFile = JSON.parse(
-      fs
-        .readFileSync('@/assets/json/diffHistories-signin-comp02.json')
-        .toString()
-    )
-    const json2: JsonFile = JSON.parse(
-      fs
-        .readFileSync('@/assets/json/diffHistories-signin-comp04.json')
-        .toString()
-    )
-    this.jsonFileArr = [json1, json2]
+  async asyncData ({ $axios }) {
+    const json1: JsonFile = await $axios.$get('/json/diffHistories-signin-comp02.json')
+    const json2: JsonFile = await $axios.$get('/json/diffHistories-signin-comp04.json')
+    return {
+      jsonFileArr: [json1, json2]
+    }
+  },
+  async mounted() {
     this.openJsonHistory()
   },
   methods: {
@@ -155,8 +160,16 @@ export default defineComponent({
 
           const toNewRootHast = getNewRootPathElements(toHast, id)
           const fromNewRootHast = getNewRootPathElements(fromHast, id)
-          const diff = justDiff(toNewRootHast, fromNewRootHast)
-          console.log(diff)
+          const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
+          const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(diffs, toNewRootHast);
+          const history = {
+            from: fromNewRootHast,
+            to: toNewRootHast,
+            diffs,
+            diffsWithbreadcrumbsPaths,
+          }
+          console.log(history)
+          this.histories.push(history)
         }
         const infos = diffHistories[i].diffAndInfos
         if (!infos) continue

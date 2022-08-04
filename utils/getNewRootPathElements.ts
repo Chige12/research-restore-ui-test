@@ -1,7 +1,7 @@
 import { HastNode } from 'hast-util-from-dom/lib'
 import cloneDeep from 'lodash/cloneDeep'
 import get from 'lodash/get'
-import { Path } from '~/mixins/deepDiffType'
+import { Path } from './recording/diffTypes'
 
 export type newRootElement = HastNode & {
   brothers?: newRootElement
@@ -92,6 +92,5 @@ export const getNewRootPathElements = (
   const newRootPathElements = generateNewRootPathElementsByArr(
     elementsDeleteChildArr
   )
-  console.log(newRootPathElements)
   return newRootPathElements
 }
