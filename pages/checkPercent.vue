@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-btn @click="createJsonFile">createJsonFile!</v-btn>
     <v-btn @click="checkProperty">click!</v-btn>
     <div class="mx-6">
       <p>diffCount {{ diffCount }}</p>
@@ -56,7 +57,7 @@ import {
   CountedProperties,
 } from '@/utils/cssPropeties'
 import { JsonFile } from '~/mixins/deepDiffType'
-import { Diff, DiffHistory, Diffs } from '~/utils/recording/diffTypes'
+import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import { createDiffsWithBreadcrumbsPath, DiffWithBreadcrumbsPath } from '~/utils/recording/paths'
 import { HastNode } from 'hast-util-from-dom/lib'
 import { saveJsonFile } from '~/utils/save'
@@ -68,6 +69,8 @@ type DataHistory = {
   diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
 }
 
+type JsonFileArr =  {name : string, json: JsonFile}[]
+
 type Data = {
   jsonFileNameArr: string[]
   diffCount: number
@@ -77,7 +80,7 @@ type Data = {
   changeDomCount: number
   allCssProperties: number
   countedProperties: CountedProperties
-  historiesByFile: DataHistory[][]
+  historiesByFile: {name: string, histories: DataHistory[]}[]
 }
 
 export default defineComponent({
@@ -85,8 +88,8 @@ export default defineComponent({
   data(): Data {
     return {
       jsonFileNameArr: [
-        '/json/diffHistories-signin-comp02.json',
-        '/json/diffHistories-signin-comp04.json'
+        'diffHistories-signin-comp02',
+        'diffHistories-signin-comp04'
       ],
       diffCount: 0,
       changeStyleCount: 0,
@@ -125,8 +128,8 @@ export default defineComponent({
   methods: {
     async openJson() {
       const jsonFileArr = await Promise.all(this.jsonFileNameArr.map(async (name) => {
-        const json: JsonFile = await this.$axios.$get(name)
-        return json
+        const json: JsonFile = await this.$axios.$get(`/json/${name}.json`)
+        return {name, json}
       }))
       this.openJsonHistory(jsonFileArr)
       // this.checkProperty(jsonFileArr)
@@ -134,16 +137,16 @@ export default defineComponent({
     orgRound(value: number, base: number): number {
       return Math.round(value * base) / base
     },
-    checkProperty(jsonFileArr: JsonFile[]) {
-      jsonFileArr.forEach((json) => {
-        this.openJsonCssPropeties(json)
+    checkProperty(jsonFileArr: JsonFileArr) {
+      jsonFileArr.forEach((file) => {
+        this.openJsonCssPropeties(file.json)
       })
     },
-    openJsonHistory(jsonFileArr: JsonFile[]) {
-      this.historiesByFile = jsonFileArr.map((json) => {
-        const { diffHistories } = json
+    openJsonHistory(jsonFileArr: JsonFileArr) {
+      this.historiesByFile = jsonFileArr.map((file) => {
+        const { diffHistories } = file.json
         const histories = this.openDiffHistories(diffHistories)
-        return histories
+        return { name: file.name, histories }
       })
     },
     openJsonCssPropeties(obj: JsonFile) {
@@ -193,8 +196,10 @@ export default defineComponent({
       return history
     },
     createJsonFile() {
-      const name = `histories`
-      saveJsonFile(obj, name)
+      this.historiesByFile.forEach(file => {
+        const name = `histories_${file.name}`
+        saveJsonFile(file.histories, name)
+      })
     }
   },
 })
