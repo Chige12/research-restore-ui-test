@@ -58,6 +58,7 @@ import {
 import { JsonFile } from '~/mixins/deepDiffType'
 import { Diff, DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import { createDiffsWithBreadcrumbsPath, DiffWithBreadcrumbsPath } from '~/utils/recording/paths'
+import { HastNode } from 'hast-util-from-dom/lib'
 
 type DataHistory = {
   to: newRootElement
@@ -157,18 +158,7 @@ export default defineComponent({
 
           const id = eventInfo.eventId
           if (!id) console.log('ID is noting!', id)
-
-          const toNewRootHast = getNewRootPathElements(toHast, id)
-          const fromNewRootHast = getNewRootPathElements(fromHast, id)
-          const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
-          const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(diffs, toNewRootHast);
-          const history = {
-            from: fromNewRootHast,
-            to: toNewRootHast,
-            diffs,
-            diffsWithbreadcrumbsPaths,
-          }
-          console.log(history)
+          const history = this.createHistory(toHast, fromHast, id)
           this.histories.push(history)
         }
         const infos = diffHistories[i].diffAndInfos
@@ -180,6 +170,20 @@ export default defineComponent({
         this.changeDomCount = changes.changeDomCount
       }
     },
+    createHistory(toHast: HastNode, fromHast: HastNode, id: string): DataHistory {
+      const toNewRootHast = getNewRootPathElements(toHast, id)
+      const fromNewRootHast = getNewRootPathElements(fromHast, id)
+      const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
+      const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(diffs, toNewRootHast);
+      const history = {
+        from: fromNewRootHast,
+        to: toNewRootHast,
+        diffs,
+        diffsWithbreadcrumbsPaths,
+      }
+      console.log(history)
+      return history
+    }
   },
 })
 </script>
