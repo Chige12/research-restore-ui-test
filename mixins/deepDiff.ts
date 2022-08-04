@@ -20,6 +20,7 @@ import {
 import { setIdToAllElements } from '~/utils/recording/elements'
 import { EVENT, EventInfo, EVENT_TYPES } from '~/utils/recording/eventTypes'
 import { getAllElementStylesAndId } from '~/utils/recording/styles'
+import { saveJsonFile } from '~/utils/save'
 import { Data, JsonFile } from './deepDiffType'
 
 const ROOT_ELEMENT_ID = 'check-component'
@@ -177,15 +178,8 @@ export default defineComponent({
         diffHistories: state.diffHistories,
         allElementStylesPerDiff: state.allElementStylesPerDiff,
       }
-      const json = JSON.stringify(obj, null, '  ')
-      const blob = new Blob([json], {
-        type: 'application/json',
-      })
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `diffHistories${pathName}.json`
-      link.click()
-      link.remove()
+      const name = `diffHistories${pathName}`
+      saveJsonFile(obj, name)
     }
   },
 })

@@ -59,6 +59,7 @@ import { JsonFile } from '~/mixins/deepDiffType'
 import { Diff, DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import { createDiffsWithBreadcrumbsPath, DiffWithBreadcrumbsPath } from '~/utils/recording/paths'
 import { HastNode } from 'hast-util-from-dom/lib'
+import { saveJsonFile } from '~/utils/save'
 
 type DataHistory = {
   to: newRootElement
@@ -68,7 +69,7 @@ type DataHistory = {
 }
 
 type Data = {
-  jsonFileArr: JsonFile[]
+  jsonFileNameArr: string[]
   diffCount: number
   changeStyleCount: number
   addDomCount: number
@@ -76,14 +77,17 @@ type Data = {
   changeDomCount: number
   allCssProperties: number
   countedProperties: CountedProperties
-  histories: DataHistory[]
+  historiesByFile: DataHistory[][]
 }
 
 export default defineComponent({
   name: 'CheckPercent',
   data(): Data {
     return {
-      jsonFileArr: [],
+      jsonFileNameArr: [
+        '/json/diffHistories-signin-comp02.json',
+        '/json/diffHistories-signin-comp04.json'
+      ],
       diffCount: 0,
       changeStyleCount: 0,
       addDomCount: 0,
@@ -91,7 +95,7 @@ export default defineComponent({
       changeDomCount: 0,
       allCssProperties: 0,
       countedProperties: [],
-      histories: [],
+      historiesByFile: [],
     }
   },
   computed: {
@@ -115,29 +119,31 @@ export default defineComponent({
       return [...this.countedProperties].sort((a, b) => b.count - a.count)
     },
   },
-  async asyncData ({ $axios }) {
-    const json1: JsonFile = await $axios.$get('/json/diffHistories-signin-comp02.json')
-    const json2: JsonFile = await $axios.$get('/json/diffHistories-signin-comp04.json')
-    return {
-      jsonFileArr: [json1, json2]
-    }
-  },
-  async mounted() {
-    this.openJsonHistory()
+  mounted() {
+    this.openJson()
   },
   methods: {
+    async openJson() {
+      const jsonFileArr = await Promise.all(this.jsonFileNameArr.map(async (name) => {
+        const json: JsonFile = await this.$axios.$get(name)
+        return json
+      }))
+      this.openJsonHistory(jsonFileArr)
+      // this.checkProperty(jsonFileArr)
+    },
     orgRound(value: number, base: number): number {
       return Math.round(value * base) / base
     },
-    checkProperty() {
-      this.jsonFileArr.forEach((json) => {
+    checkProperty(jsonFileArr: JsonFile[]) {
+      jsonFileArr.forEach((json) => {
         this.openJsonCssPropeties(json)
       })
     },
-    openJsonHistory() {
-      this.jsonFileArr.forEach((json) => {
+    openJsonHistory(jsonFileArr: JsonFile[]) {
+      this.historiesByFile = jsonFileArr.map((json) => {
         const { diffHistories } = json
-        this.openDiffHistories(diffHistories)
+        const histories = this.openDiffHistories(diffHistories)
+        return histories
       })
     },
     openJsonCssPropeties(obj: JsonFile) {
@@ -148,7 +154,8 @@ export default defineComponent({
       const styleDiffs = getStyleDiffs(allElementStylesPerDiff)
       this.countedProperties = getCountedProperties(styleDiffs)
     },
-    openDiffHistories(diffHistories: Array<DiffHistory>) {
+    openDiffHistories(diffHistories: Array<DiffHistory>): DataHistory[] {
+      let histories = []
       for (let i = 0; i < diffHistories.length; i++) {
         const { to, from } = diffHistories[i]
         if (!!to && !!from) {
@@ -159,7 +166,7 @@ export default defineComponent({
           const id = eventInfo.eventId
           if (!id) console.log('ID is noting!', id)
           const history = this.createHistory(toHast, fromHast, id)
-          this.histories.push(history)
+          histories.push(history)
         }
         const infos = diffHistories[i].diffAndInfos
         if (!infos) continue
@@ -169,6 +176,7 @@ export default defineComponent({
         this.removeDomCount = changes.removeDomCount
         this.changeDomCount = changes.changeDomCount
       }
+      return histories
     },
     createHistory(toHast: HastNode, fromHast: HastNode, id: string): DataHistory {
       const toNewRootHast = getNewRootPathElements(toHast, id)
@@ -183,6 +191,10 @@ export default defineComponent({
       }
       console.log(history)
       return history
+    },
+    createJsonFile() {
+      const name = `histories`
+      saveJsonFile(obj, name)
     }
   },
 })
