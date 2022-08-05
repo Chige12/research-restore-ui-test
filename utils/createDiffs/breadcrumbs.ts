@@ -12,7 +12,9 @@ export type DataHistory = {
   diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
 }
 
-export type HistoriesByFile = { name: string; histories: DataHistory[] }[]
+export type HistoryAndFileName = { name: string; histories: DataHistory[] }
+
+export type HistoriesByFile = HistoryAndFileName[]
 
 export type PropertiesExcludingSome = {
   type?: string

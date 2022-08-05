@@ -58,7 +58,7 @@ import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import {
   createDiffsWithBreadcrumbsPath,
   DataHistory,
-} from '~/utils/recording/paths'
+} from '~/utils/createDiffs/breadcrumbs'
 import { JsonFileArr } from './checkPercent.vue'
 import { diff as justDiff } from 'just-diff'
 import { saveJsonFile } from '~/utils/saveJsonFile'

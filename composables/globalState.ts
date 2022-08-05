@@ -20,7 +20,7 @@ export const useHistoriesByFileStore = () => {
   }
 
   return {
-    historiesByFile: readonly(state),
+    historiesByFile: shallowReadonly(state),
     setHistoriesByFile,
   }
 }
