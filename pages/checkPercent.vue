@@ -52,7 +52,7 @@ import {
   getStyleDiffs,
   getCountedProperties,
   CountedProperties,
-} from '@/utils/cssPropeties'
+} from '~/utils/checkPercent/cssPropeties'
 import { JsonFile } from '~/mixins/deepDiffType'
 import { DiffHistory } from '~/utils/recording/diffTypes'
 

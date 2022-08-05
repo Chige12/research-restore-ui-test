@@ -61,7 +61,7 @@ import {
 } from '~/utils/recording/paths'
 import { JsonFileArr } from './checkPercent.vue'
 import { diff as justDiff } from 'just-diff'
-import { saveJsonFile } from '~/utils/save'
+import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 
 type State = {

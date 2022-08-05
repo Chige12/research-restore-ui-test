@@ -1,15 +1,12 @@
 import { HastNode } from 'hast-util-from-dom/lib'
 import cloneDeep from 'lodash/cloneDeep'
 import get from 'lodash/get'
+import { hasProperty } from './check'
 import { Path } from './recording/diffTypes'
 
 export type newRootElement = HastNode & {
   brothers?: newRootElement
   parent?: newRootElement
-}
-
-const hasProperty = (obj: unknown, key: string) => {
-  return !!obj && Object.prototype.hasOwnProperty.call(obj, key)
 }
 
 const getPathById = (hast: HastNode, elementId: string): Path => {

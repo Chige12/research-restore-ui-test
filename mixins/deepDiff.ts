@@ -20,7 +20,7 @@ import {
 import { setIdToAllElements } from '~/utils/recording/elements'
 import { EVENT, EventInfo, EVENT_TYPES } from '~/utils/recording/eventTypes'
 import { getAllElementStylesAndId } from '~/utils/recording/styles'
-import { saveJsonFile } from '~/utils/save'
+import { saveJsonFile } from '~/utils/saveJsonFile'
 import { Data, JsonFile } from './deepDiffType'
 
 const ROOT_ELEMENT_ID = 'check-component'

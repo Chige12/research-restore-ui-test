@@ -1,6 +1,6 @@
 import { readonly, ref } from 'vue'
 import { JsonFile } from '~/mixins/deepDiffType'
-import { HistoriesByFile } from '~/utils/recording/paths'
+import { HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
 
 export const useJsonFiles = () => {
   const initialState = [] as JsonFile[]

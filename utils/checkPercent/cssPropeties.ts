@@ -1,8 +1,8 @@
 import cssProperties from 'css-properties'
 import { diff as justDiff } from 'just-diff'
 import get from 'lodash/get'
-import { Diff, DiffAndInfos, ElementDiffs, Info } from './recording/diffTypes'
-import { CSSStyle, StylesPerElements } from './recording/styles'
+import { Diff, DiffAndInfos, ElementDiffs, Info } from '../recording/diffTypes'
+import { CSSStyle, StylesPerElements } from '../recording/styles'
 
 export type DiffAndStyle = Diff & {
   property: CSSStyle['property']
