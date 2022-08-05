@@ -5,6 +5,15 @@ import { newRootElement } from '../getNewRootPathElements'
 import { Diff, Diffs, Path } from './diffTypes'
 import { CSSStyle } from './styles'
 
+export type DataHistory = {
+  to: newRootElement
+  from: newRootElement
+  diffs: Diffs
+  diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
+}
+
+export type HistoriesByFile = { name: string; histories: DataHistory[] }[]
+
 export type PropertiesExcludingSome = {
   type?: string
   value?: string

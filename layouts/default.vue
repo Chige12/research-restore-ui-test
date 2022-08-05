@@ -88,6 +88,11 @@ export default {
         },
         {
           icon: 'mdi-chart-bubble',
+          title: 'checkDiffs',
+          to: '/checkDiffs',
+        },
+        {
+          icon: 'mdi-chart-bubble',
           title: 'Inspire',
           to: '/inspire',
         },

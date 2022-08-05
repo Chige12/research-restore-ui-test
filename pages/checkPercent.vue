@@ -46,7 +46,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { newRootElement } from '@/utils/getNewRootPathElements'
 import {
   countChanges,
   filteredCssProperties,
@@ -55,15 +54,7 @@ import {
   CountedProperties,
 } from '@/utils/cssPropeties'
 import { JsonFile } from '~/mixins/deepDiffType'
-import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
-import { DiffWithBreadcrumbsPath } from '~/utils/recording/paths'
-
-type DataHistory = {
-  to: newRootElement
-  from: newRootElement
-  diffs: Diffs
-  diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
-}
+import { DiffHistory } from '~/utils/recording/diffTypes'
 
 export type JsonFileArr = { name: string; json: JsonFile }[]
 

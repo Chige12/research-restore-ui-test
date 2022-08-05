@@ -2,10 +2,10 @@
   <div v-if="state.jsonFileNameArr.length !== 0">
     <v-btn @click="openJson">open Json File!</v-btn>
     <v-btn @click="createJsonFile">create Json File!</v-btn>
-    <div class="mx-6" v-for="file in state.historiesByFile" :key="file.name">
+    <div class="mx-6" v-for="file in storeHistoriesByFile" :key="file.name">
       <h3>file {{ file.name }}</h3>
       <div v-for="(history, key) in file.histories" :key="`histories-${key}`">
-        <p>{{key}}</p>
+        <p>{{ key }}</p>
         <v-simple-table>
           <template #default>
             <thead>
@@ -17,14 +17,26 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(diff, d_key) in history.diffsWithbreadcrumbsPaths" :key="`diffs-${d_key}`">
-                <td>{{diff.op}}</td>
-                <td>{{diff.path.join(', ')}}</td>
-                <td>{{diff.value}}</td>
-                <td v-for="(breadcrumbsPath, b_key) in diff.breadcrumbsPath" :key="`breadcrumbsPath-${b_key}`">
-                  <span v-if="breadcrumbsPath.type">type: {{ breadcrumbsPath.type }},</span>
-                  <span v-if="breadcrumbsPath.tagName">tagName: {{ breadcrumbsPath.tagName }}</span>
-                  <span v-if="breadcrumbsPath.properties">properties: {{ breadcrumbsPath.properties }}</span>
+              <tr
+                v-for="(diff, d_key) in history.diffsWithbreadcrumbsPaths"
+                :key="`diffs-${d_key}`"
+              >
+                <td>{{ diff.op }}</td>
+                <td>{{ diff.path.join(', ') }}</td>
+                <td>{{ diff.value }}</td>
+                <td
+                  v-for="(breadcrumbsPath, b_key) in diff.breadcrumbsPath"
+                  :key="`breadcrumbsPath-${b_key}`"
+                >
+                  <span v-if="breadcrumbsPath.type"
+                    >type: {{ breadcrumbsPath.type }},</span
+                  >
+                  <span v-if="breadcrumbsPath.tagName"
+                    >tagName: {{ breadcrumbsPath.tagName }}</span
+                  >
+                  <span v-if="breadcrumbsPath.properties"
+                    >properties: {{ breadcrumbsPath.properties }}</span
+                  >
                 </td>
               </tr>
             </tbody>
@@ -39,42 +51,36 @@ import axios from 'axios'
 import { HastNode } from 'hast-util-from-dom/lib'
 import { defineComponent, reactive } from 'vue'
 import { JsonFile } from '~/mixins/deepDiffType'
-import {
-  getNewRootPathElements,
-  newRootElement,
-} from '~/utils/getNewRootPathElements'
+import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
 import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import {
   createDiffsWithBreadcrumbsPath,
-  DiffWithBreadcrumbsPath,
+  DataHistory,
 } from '~/utils/recording/paths'
 import { JsonFileArr } from './checkPercent.vue'
 import { diff as justDiff } from 'just-diff'
 import { saveJsonFile } from '~/utils/save'
-
-type DataHistory = {
-  to: newRootElement
-  from: newRootElement
-  diffs: Diffs
-  diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
-}
+import { useHistoriesByFileStore } from '~/composables/globalState'
 
 type State = {
   jsonFileNameArr: string[]
-  historiesByFile: { name: string; histories: DataHistory[] }[]
 }
 
 export default defineComponent({
   setup() {
+    const { historiesByFile: storeHistoriesByFile, setHistoriesByFile } =
+      useHistoriesByFileStore()
+
     const state = reactive<State>({
       jsonFileNameArr: [],
-      historiesByFile: [],
     })
 
     const getJsonFileNames = async () => {
-      const fileNamelist: string[] = await axios.get(`/fileNameList.json`).then(
-        (x) => {return x.data}
-      )
+      const fileNamelist: string[] = await axios
+        .get(`/fileNameList.json`)
+        .then((x) => {
+          return x.data
+        })
       state.jsonFileNameArr = fileNamelist
       console.log(state.jsonFileNameArr)
     }
@@ -86,9 +92,9 @@ export default defineComponent({
       console.log('open json ...')
       const jsonFileArr = await Promise.all(
         state.jsonFileNameArr.map(async (name) => {
-          const json: JsonFile = await axios.get(`/json/${name}`).then(
-            (x) => {return x.data}
-          )
+          const json: JsonFile = await axios.get(`/json/${name}`).then((x) => {
+            return x.data
+          })
           return { name, json }
         })
       )
@@ -97,11 +103,13 @@ export default defineComponent({
     }
 
     const openJsonHistory = (jsonFileArr: JsonFileArr) => {
-      state.historiesByFile = jsonFileArr.map((file) => {
+      const historiesByFile = jsonFileArr.map((file) => {
         const { diffHistories } = file.json
         const histories = openDiffHistories(diffHistories)
         return { name: file.name, histories }
       })
+
+      setHistoriesByFile(historiesByFile)
     }
 
     const openDiffHistories = (
@@ -147,7 +155,7 @@ export default defineComponent({
     }
 
     const createJsonFile = () => {
-      state.historiesByFile.forEach((file) => {
+      storeHistoriesByFile.value.forEach((file) => {
         const name = `histories_${file.name}`
         saveJsonFile(file.histories, name)
       })
@@ -155,6 +163,7 @@ export default defineComponent({
 
     return {
       state,
+      storeHistoriesByFile,
       openJson,
       createJsonFile,
     }
