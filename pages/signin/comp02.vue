@@ -1,38 +1,40 @@
 <template>
-  <v-row justify="center" align="center">
-    <v-col cols="12" sm="8" md="6">
-      <v-card id="check-component" color="#fafafa" elevation="0">
-        <v-card-title class="headline px-8 pt-8">Sign in</v-card-title>
-        <v-card-text class="pa-8">
-          <v-text-field
-            v-model="email"
-            type="email"
-            label="Email"
-            :rules="[rules.required, rules.email]"
-            prepend-icon="mdi-email-outline"
-          />
-          <v-text-field
-            v-model="password"
-            label="Password"
-            :type="isShowPassword ? 'text' : 'password'"
-            :append-icon="isShowPassword ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="[rules.required, rules.min]"
-            name="input-10-2"
-            hint="At least 8 characters"
-            class="input-group--focused"
-            prepend-icon="mdi-lock-outline"
-            @click:append="isShowPassword = !isShowPassword"
-          />
-        </v-card-text>
-        <v-card-actions class="px-8 pb-8">
-          <v-spacer />
-          <v-btn color="primary" x-large elevation="0" nuxt to="/inspire"
-            >サインイン</v-btn
-          >
-        </v-card-actions>
-      </v-card>
-    </v-col>
-  </v-row>
+  <v-container>
+    <v-row justify="center" align="center">
+      <v-col cols="12" sm="8" md="6">
+        <v-card id="check-component" color="#fafafa" elevation="0">
+          <v-card-title class="headline px-8 pt-8">Sign in</v-card-title>
+          <v-card-text class="pa-8">
+            <v-text-field
+              v-model="email"
+              type="email"
+              label="Email"
+              :rules="[rules.required, rules.email]"
+              prepend-icon="mdi-email-outline"
+            />
+            <v-text-field
+              v-model="password"
+              label="Password"
+              :type="isShowPassword ? 'text' : 'password'"
+              :append-icon="isShowPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :rules="[rules.required, rules.min]"
+              name="input-10-2"
+              hint="At least 8 characters"
+              class="input-group--focused"
+              prepend-icon="mdi-lock-outline"
+              @click:append="isShowPassword = !isShowPassword"
+            />
+          </v-card-text>
+          <v-card-actions class="px-8 pb-8">
+            <v-spacer />
+            <v-btn color="primary" x-large elevation="0" nuxt to="/inspire"
+              >サインイン</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">

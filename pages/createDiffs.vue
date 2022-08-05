@@ -10,6 +10,7 @@
           <template #default>
             <thead>
               <tr>
+                <th class="text-left">index</th>
                 <th class="text-left">op</th>
                 <th class="text-left">path</th>
                 <th class="text-left">value</th>
@@ -21,6 +22,7 @@
                 v-for="(diff, d_key) in history.diffsWithbreadcrumbsPaths"
                 :key="`diffs-${d_key}`"
               >
+                <td>{{ d_key }}</td>
                 <td>{{ diff.op }}</td>
                 <td>{{ diff.path.join(', ') }}</td>
                 <td>{{ diff.value }}</td>

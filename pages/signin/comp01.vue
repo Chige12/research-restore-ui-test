@@ -1,36 +1,38 @@
 <template>
-  <v-row justify="center" align="center">
-    <v-col cols="12" sm="8" md="6">
-      <v-card id="check-component" outlined>
-        <v-card-title class="headline px-12 pt-8"> Sign in </v-card-title>
-        <v-card-text class="px-12 py-4">
-          <v-text-field
-            v-model="email"
-            type="email"
-            outlined
-            label="Email address"
-            :rules="[rules.required, rules.email]"
-          />
-          <v-text-field
-            v-model="password"
-            outlined
-            label="Password"
-            :type="isShowPassword ? 'text' : 'password'"
-            :append-icon="isShowPassword ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="[rules.required, rules.min]"
-            name="input-10-2"
-            hint="At least 8 characters"
-            class="input-group--focused"
-            @click:append="isShowPassword = !isShowPassword"
-          />
-        </v-card-text>
-        <v-card-actions class="px-12 pb-8">
-          <v-spacer />
-          <v-btn outlined nuxt to="/inspire"> Continue </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-col>
-  </v-row>
+  <v-container>
+    <v-row justify="center" align="center">
+      <v-col cols="12" sm="8" md="6">
+        <v-card id="check-component" outlined>
+          <v-card-title class="headline px-12 pt-8"> Sign in </v-card-title>
+          <v-card-text class="px-12 py-4">
+            <v-text-field
+              v-model="email"
+              type="email"
+              outlined
+              label="Email address"
+              :rules="[rules.required, rules.email]"
+            />
+            <v-text-field
+              v-model="password"
+              outlined
+              label="Password"
+              :type="isShowPassword ? 'text' : 'password'"
+              :append-icon="isShowPassword ? 'mdi-eye' : 'mdi-eye-off'"
+              :rules="[rules.required, rules.min]"
+              name="input-10-2"
+              hint="At least 8 characters"
+              class="input-group--focused"
+              @click:append="isShowPassword = !isShowPassword"
+            />
+          </v-card-text>
+          <v-card-actions class="px-12 pb-8">
+            <v-spacer />
+            <v-btn outlined nuxt to="/inspire"> Continue </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">
