@@ -93,3 +93,7 @@ sw.*
 
 # Nitro
 .output
+
+/static/json
+/static/diffJson
+/static/fileNameList.json

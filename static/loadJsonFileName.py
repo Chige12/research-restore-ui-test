@@ -1,9 +1,9 @@
 # jsonフォルダ内のjsonファイルの名前の配列を作って書き出す
 
-import pathlib
 import json
+import pathlib
 
-assetsPath = '/Users/chige/projects/research/research-restore-ui-test/assets/'
+assetsPath = '/Users/chige/projects/research/research-restore-ui-test/static/'
 path = '%s/json' % (assetsPath)
 p_temp = list(pathlib.Path(path).glob('*.json'))
 
