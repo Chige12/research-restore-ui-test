@@ -22,8 +22,8 @@
                 <td>{{diff.path.join(', ')}}</td>
                 <td>{{diff.value}}</td>
                 <td v-for="(breadcrumbsPath, b_key) in diff.breadcrumbsPath" :key="`breadcrumbsPath-${b_key}`">
-                  type: {{ breadcrumbsPath.type }},
-                  tagName: {{ breadcrumbsPath.tagName }}
+                  <span v-if="breadcrumbsPath.type">type: {{ breadcrumbsPath.type }},</span>
+                  <span v-if="breadcrumbsPath.tagName">tagName: {{ breadcrumbsPath.tagName }}</span>
                   <span v-if="breadcrumbsPath.properties">properties: {{ breadcrumbsPath.properties }}</span>
                 </td>
               </tr>
