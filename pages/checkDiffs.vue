@@ -12,6 +12,8 @@
             <th class="text-left">index [B]</th>
             <th class="text-left">name [B]</th>
             <th class="text-left">bitId [B]</th>
+            <th class="text-left">TED</th>
+            <th class="text-left">TED BcP</th>
           </tr>
         </thead>
         <tbody>
@@ -26,6 +28,8 @@
             <td>{{combination[1].index}}</td>
             <td>{{combination[1].name}}</td>
             <td>{{combination[1].bitId}}</td>
+            <td>{{state.diffsDiffsArr[c_key].diffsDiffs.length}}</td>
+            <td>{{state.diffsDiffsArr[c_key].diffsWithbreadcrumbsPathsDiffs.length}}</td>
           </tr>
         </tbody>
       </template>
@@ -35,8 +39,10 @@
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
+import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import { DataHistory, HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
+import { Diffs } from '~/utils/recording/diffTypes'
 
 type EventHistory = {
   name: string
@@ -50,8 +56,14 @@ type EventHistoryWithBitId = EventHistory & {
 
 type CombinationList = EventHistoryWithBitId[][]
 
+type DiffsDiffs = {
+  diffsDiffs: Diffs
+  diffsWithbreadcrumbsPathsDiffs: Diffs
+}
+
 type State = {
   combinationList: CombinationList
+  diffsDiffsArr: DiffsDiffs[]
 }
 
 export default defineComponent({
@@ -60,6 +72,7 @@ export default defineComponent({
 
     const state = reactive<State>({
       combinationList: [],
+      diffsDiffsArr: []
     })
 
     const getAllEventHistories = (file: HistoriesByFile): EventHistory[] => {
@@ -98,10 +111,20 @@ export default defineComponent({
       const allEventHistoriesWithBitId = allEventHistories.map((x, i) => ({ ...x, bitId: bitList[i]}))
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
       state.combinationList = combinationList
+      calculateEditDistance(combinationList)
     }
 
-    const calculateEditDistance = () => {
-      
+    const calculateEditDistance = (combinationList: CombinationList) => {
+      const diffsDiffsArr = combinationList.map(combination => {
+        const [ A, B ] = combination
+        const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
+        const diffsWithbreadcrumbsPathsDiffs = justDiff(A.history.diffsWithbreadcrumbsPaths, B.history.diffsWithbreadcrumbsPaths)
+        return {
+          diffsDiffs,
+          diffsWithbreadcrumbsPathsDiffs,
+        }
+      })
+      state.diffsDiffsArr = diffsDiffsArr
     }
 
     return {
