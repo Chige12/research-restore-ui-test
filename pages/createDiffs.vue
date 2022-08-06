@@ -53,7 +53,7 @@ import axios from 'axios'
 import { HastNode } from 'hast-util-from-dom/lib'
 import { defineComponent, reactive } from 'vue'
 import { JsonFile } from '~/mixins/deepDiffType'
-import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
+import { getEventFiringElement, getNewRootPathElements } from '~/utils/getNewRootPathElements'
 import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import {
   createDiffsWithBreadcrumbsPath,
@@ -147,6 +147,7 @@ export default defineComponent({
         toNewRootHast
       )
       const history = {
+        old: {to: toHast, id},
         from: fromNewRootHast,
         to: toNewRootHast,
         diffs,

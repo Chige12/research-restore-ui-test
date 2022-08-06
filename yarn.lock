@@ -6240,6 +6240,14 @@ hast-util-raw@^7.2.0:
     web-namespaces "^2.0.0"
     zwitch "^2.0.0"
 
+hast-util-to-dom@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/hast-util-to-dom/-/hast-util-to-dom-3.1.0.tgz#9790daae3d5b60b627f4082c1f73ac75e9778283"
+  integrity sha512-ZGrDF2qJDSWIHqos/YWbzeehVI4AYPz1RGWklNrKf2mJPCVe+cLnnsSzheSpHeIrJ/KFfz9tOzMwyphy+EIUUg==
+  dependencies:
+    property-information "^6.0.0"
+    web-namespaces "^2.0.0"
+
 hast-util-to-parse5@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/hast-util-to-parse5/-/hast-util-to-parse5-7.0.0.tgz#a39808e69005d10afeed1866029a1fb137df3f7c"

@@ -1,4 +1,4 @@
-import { HastElement } from 'hast-util-from-dom/lib'
+import { HastElement, HastNode } from 'hast-util-from-dom/lib'
 import get from 'lodash/get'
 import { hasProperty } from '../check'
 import { newRootElement } from '../getNewRootPathElements'
@@ -6,6 +6,7 @@ import { Diff, Diffs, Path } from '../recording/diffTypes'
 import { CSSStyle } from '../recording/styles'
 
 export type DataHistory = {
+  old: { to: HastNode; id: string }
   to: newRootElement
   from: newRootElement
   diffs: Diffs

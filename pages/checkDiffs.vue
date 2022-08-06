@@ -1,39 +1,75 @@
 <template>
   <div v-if="historiesByFile.length !== 0">
-    <v-btn @click="generateCombinationList">generate comvination</v-btn>
-    <v-simple-table>
-      <template #default>
-        <thead>
-          <tr>
-            <th class="text-left">bit</th>
-            <th class="text-left">bitId [A]</th>
-            <th class="text-left">name [A]</th>
-            <th class="text-left">index [A]</th>
-            <th class="text-left">index [B]</th>
-            <th class="text-left">name [B]</th>
-            <th class="text-left">bitId [B]</th>
-            <th class="text-left">TED</th>
-            <th class="text-left">TED BcP</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(combination, c_key) in state.combinationList"
-            :key="`combination-${c_key}`"
-          >
-            <td>{{combination[0].bitId + combination[1].bitId}}</td>
-            <td>{{combination[0].bitId}}</td>
-            <td>{{combination[0].name}}</td>
-            <td>{{combination[0].index}}</td>
-            <td>{{combination[1].index}}</td>
-            <td>{{combination[1].name}}</td>
-            <td>{{combination[1].bitId}}</td>
-            <td>{{state.diffsDiffsArr[c_key].diffsDiffs.length}}</td>
-            <td>{{state.diffsDiffsArr[c_key].diffsWithbreadcrumbsPathsDiffs.length}}</td>
-          </tr>
-        </tbody>
+    <v-dialog v-model="state.dialog" width="1000">
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn @click="generateCombinationList">generate comvination</v-btn>
+        <v-simple-table>
+          <template #default>
+            <thead>
+              <tr>
+                <th class="text-left">bit</th>
+                <th class="text-left">bitId [A]</th>
+                <th class="text-left">name [A]</th>
+                <th class="text-left">index [A]</th>
+                <th class="text-left">index [B]</th>
+                <th class="text-left">name [B]</th>
+                <th class="text-left">bitId [B]</th>
+                <th class="text-left">TED</th>
+                <th class="text-left">TED BcP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(combination, c_key) in state.combinationList"
+                :key="`combination-${c_key}`"
+              >
+                <td>{{ combination[0].bitId + combination[1].bitId }}</td>
+                <td>{{ combination[0].bitId }}</td>
+                <td>{{ combination[0].name }}</td>
+                <td>{{ combination[0].index }}</td>
+                <td>{{ combination[1].index }}</td>
+                <td>{{ combination[1].name }}</td>
+                <td>{{ combination[1].bitId }}</td>
+                <td>{{ state.diffsDiffsArr[c_key].diffsDiffs.length }}</td>
+                <td>
+                  {{
+                    state.diffsDiffsArr[c_key].diffsWithbreadcrumbsPathsDiffs
+                      .length
+                  }}
+                </td>
+                <td>
+                  <v-btn
+                    @click="state.key = c_key"
+                    v-bind="attrs"
+                    v-on="on"
+                    small
+                    >Preview</v-btn
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </template>
+        </v-simple-table>
       </template>
-    </v-simple-table>
+      <v-card>
+        <div class="pa-4">
+          <div>
+            <v-btn icon @click="state.indexNumber++"><v-icon> mdi-plus </v-icon></v-btn>
+            <span>{{state.indexNumber}}</span>
+            <v-btn icon @click="state.indexNumber--"><v-icon> mdi-minus </v-icon></v-btn>
+          </div>
+          <div class="mb-4" style="position: relative">
+            <div v-html="eventFiringElements[0]"></div>
+          </div>
+          <div style="position: relative">
+            <div v-html="eventFiringElements[1]"></div>
+          </div>
+        </div>
+        <v-card-actions>
+          <v-btn @click="state.dialog = false">close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 <script lang="ts">
@@ -43,6 +79,8 @@ import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import { DataHistory, HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
 import { Diffs } from '~/utils/recording/diffTypes'
+import { toDom } from 'hast-util-to-dom'
+import { getEventFiringElement } from '~/utils/getNewRootPathElements'
 
 type EventHistory = {
   name: string
@@ -51,7 +89,7 @@ type EventHistory = {
 }
 
 type EventHistoryWithBitId = EventHistory & {
-  bitId: number 
+  bitId: number
 }
 
 type CombinationList = EventHistoryWithBitId[][]
@@ -64,6 +102,10 @@ type DiffsDiffs = {
 type State = {
   combinationList: CombinationList
   diffsDiffsArr: DiffsDiffs[]
+  key: number,
+  dialog: boolean,
+  indexNumber: number,
+  eventFiringElements: (string | null)[]
 }
 
 export default defineComponent({
@@ -72,14 +114,18 @@ export default defineComponent({
 
     const state = reactive<State>({
       combinationList: [],
-      diffsDiffsArr: []
+      diffsDiffsArr: [],
+      dialog: false,
+      key: 0,
+      indexNumber: 2,
+      eventFiringElements: [null, null]
     })
 
     const getAllEventHistories = (file: HistoriesByFile): EventHistory[] => {
       let allEventHistories = [] as EventHistory[]
       for (let i = 0; i < file.length; i++) {
         for (let h = 0; h < file[i].histories.length; h++) {
-          const history = file[i].histories[h];
+          const history = file[i].histories[h]
           const oneEventHistory: EventHistory = {
             name: file[i].name,
             index: h,
@@ -91,34 +137,42 @@ export default defineComponent({
       return allEventHistories
     }
 
-    const getCombinationList = (list: EventHistoryWithBitId[]): CombinationList => {
-      let combinationList = [];
+    const getCombinationList = (
+      list: EventHistoryWithBitId[]
+    ): CombinationList => {
+      let combinationList = [] as CombinationList
       for (let i = 0; i < list.length; i++) {
         for (let j = 0; j < i; j++) {
           if (list[i].name === list[j].name) continue
-          combinationList.push([list[i], list[j]]);
+          combinationList.push([list[i], list[j]])
         }
       }
-      return combinationList;
+      return combinationList
     }
 
-    const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i);
+    const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i)
 
     const generateCombinationList = () => {
       const file = cloneDeep(historiesByFile.value)
       const allEventHistories = getAllEventHistories(file)
       const bitList = createBitList(allEventHistories.length)
-      const allEventHistoriesWithBitId = allEventHistories.map((x, i) => ({ ...x, bitId: bitList[i]}))
+      const allEventHistoriesWithBitId = allEventHistories.map((x, i) => ({
+        ...x,
+        bitId: bitList[i],
+      }))
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
       state.combinationList = combinationList
       calculateEditDistance(combinationList)
     }
 
     const calculateEditDistance = (combinationList: CombinationList) => {
-      const diffsDiffsArr = combinationList.map(combination => {
-        const [ A, B ] = combination
+      const diffsDiffsArr = combinationList.map((combination) => {
+        const [A, B] = combination
         const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
-        const diffsWithbreadcrumbsPathsDiffs = justDiff(A.history.diffsWithbreadcrumbsPaths, B.history.diffsWithbreadcrumbsPaths)
+        const diffsWithbreadcrumbsPathsDiffs = justDiff(
+          A.history.diffsWithbreadcrumbsPaths,
+          B.history.diffsWithbreadcrumbsPaths
+        )
         return {
           diffsDiffs,
           diffsWithbreadcrumbsPathsDiffs,
@@ -127,10 +181,50 @@ export default defineComponent({
       state.diffsDiffsArr = diffsDiffsArr
     }
 
+    const generateEventFiringElements = (
+      A: DataHistory,
+      B: DataHistory,
+      index: number
+    ): (string | null)[] => {
+      const AEventFiringElement = getEventFiringElement(A.old.to, A.old.id, index);
+      const BEventFiringElement = getEventFiringElement(B.old.to, B.old.id, index);
+      const AHtml = AEventFiringElement
+        ? (toDom(AEventFiringElement).outerHTML as string)
+        : null
+      const BHtml = BEventFiringElement
+        ? (toDom(BEventFiringElement).outerHTML as string)
+        : null
+      console.log(AHtml, BHtml)
+      return [AHtml, BHtml]
+    }
+
+    const eventFiringElements = computed(() => {
+      const index = state.indexNumber * 2
+      if (state.combinationList.length === 0) return [null, null]
+      const [A, B] = state.combinationList[state.key]
+      return generateEventFiringElements(
+        A.history,
+        B.history,
+        index
+      )
+    })
+
+    // watchEffect(() => {
+    //   if (state.combinationList.length === 0) return [null, null]
+    //   const index = state.key
+    //   const [A, B] = state.combinationList[state.key]
+    //   state.eventFiringElements = generateEventFiringElements(
+    //     A.history,
+    //     B.history,
+    //     index
+    //   )
+    // })
+
     return {
       state,
       historiesByFile,
-      generateCombinationList
+      eventFiringElements,
+      generateCombinationList,
     }
   },
 })

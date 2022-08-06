@@ -91,3 +91,17 @@ export const getNewRootPathElements = (
   )
   return newRootPathElements
 }
+
+export const getEventFiringElement = (
+  hast: HastNode,
+  id: string,
+  minus: number
+): HastNode => {
+  const path = getPathById(hast, id)
+  const index = path.lastIndexOf('children')
+  const lastHastPath = index !== -1 ? path.slice(0, index - minus) : path
+
+  const eventFiringHast: HastNode = get(cloneDeep(hast), lastHastPath)
+  console.log(eventFiringHast)
+  return eventFiringHast
+}
