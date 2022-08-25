@@ -25,6 +25,8 @@ import { Data, JsonFile } from './deepDiffType'
 
 const ROOT_ELEMENT_ID = 'check-component'
 
+const delay = (n: number) => new Promise((r) => setTimeout(r, n * 1000))
+
 export default defineComponent({
   setup() {
     const state = reactive<Data>({
@@ -79,10 +81,14 @@ export default defineComponent({
       )
     })
 
-    const createHastHistory = (type: EVENT_TYPES, event?: Event) => {
-      const { rootElement, hastHistories, allElementStylesPerDiff } = state
+    const createHastHistory = async (type: EVENT_TYPES, event?: Event) => {
+      const { hastHistories, allElementStylesPerDiff } = state
+
+      await delay(1)
+
+      const rootElement = document.getElementById(ROOT_ELEMENT_ID)
       if (!rootElement) {
-        alert('Error in createHastHistory: id "check-component" is null.')
+        console.log('Error in createHastHistory: id "check-component" is null.')
         return
       }
       const pathName = location.pathname.replaceAll('/', '-')

@@ -106,8 +106,8 @@ export default {
         },
         {
           icon: 'mdi-chart-bubble',
-          title: 'SignIn 03',
-          to: '/signin/comp03',
+          title: 'SignIn 03 elementUI',
+          to: '/signin/elementUI',
         },
         {
           icon: 'mdi-chart-bubble',

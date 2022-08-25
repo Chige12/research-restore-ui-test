@@ -1,6 +1,8 @@
 import { defineNuxtConfig } from '@nuxt/bridge'
 import colors from 'vuetify/es5/util/colors'
 
+const lifecycle = process.env.npm_lifecycle_event
+
 export default defineNuxtConfig({
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
@@ -19,10 +21,10 @@ export default defineNuxtConfig({
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
-  css: [],
+  css: ['element-ui/lib/theme-chalk/index.css'],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [],
+  plugins: ['@/plugins/element-ui'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -34,6 +36,10 @@ export default defineNuxtConfig({
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
   ],
+
+  build: {
+    transpile: lifecycle === 'build' ? ['element-plus'] : [],
+  },
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: ['@nuxt/content', '@nuxtjs/axios'],
