@@ -25,6 +25,7 @@
     "just-diff": "^5.0.1",
     "lodash": "^4.17.21",
     "nuxt-edge": "latest",
+    "view-design": "^4.7.0",
     "vue": "^2.6.14",
     "vue-server-renderer": "^2.6.14",
     "vue-template-compiler": "^2.6.14",
