@@ -111,6 +111,11 @@ export default {
         },
         {
           icon: 'mdi-chart-bubble',
+          title: 'SignIn 04 iView',
+          to: '/signin/iView',
+        },
+        {
+          icon: 'mdi-chart-bubble',
           title: 'SignIn 04',
           to: '/signin/comp04',
         },
