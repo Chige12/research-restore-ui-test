@@ -2,7 +2,29 @@
   <div v-if="historiesByFile.length !== 0">
     <v-dialog v-model="state.dialog" width="1000">
       <template v-slot:activator="{ on, attrs }">
-        <v-btn @click="generateCombinationList">generate comvination</v-btn>
+        <div class="ma-4">
+          <v-btn class="mb-2" @click="generateCombinationList"
+            >generate comvination</v-btn
+          >
+          <v-row align="center">
+            <v-col cols="6">
+              <v-select
+                :items="[''].concat(state.file.map((x) => x.name))"
+                v-model="state.selectedFileA"
+                label="[ A ]"
+                outlined
+              ></v-select>
+            </v-col>
+            <v-col cols="6">
+              <v-select
+                :items="[''].concat(state.file.map((x) => x.name))"
+                v-model="state.selectedFileB"
+                label="[ B ]"
+                outlined
+              ></v-select>
+            </v-col>
+          </v-row>
+        </div>
         <v-simple-table>
           <template #default>
             <thead>
@@ -54,9 +76,13 @@
       <v-card>
         <div class="pa-4">
           <div>
-            <v-btn icon @click="state.indexNumber++"><v-icon> mdi-plus </v-icon></v-btn>
-            <span>{{state.indexNumber}}</span>
-            <v-btn icon @click="state.indexNumber--"><v-icon> mdi-minus </v-icon></v-btn>
+            <v-btn icon @click="state.indexNumber++"
+              ><v-icon> mdi-plus </v-icon></v-btn
+            >
+            <span>{{ state.indexNumber }}</span>
+            <v-btn icon @click="state.indexNumber--"
+              ><v-icon> mdi-minus </v-icon></v-btn
+            >
           </div>
           <div class="mb-4" style="position: relative">
             <div v-html="eventFiringElements[0]"></div>
@@ -99,12 +125,28 @@ type DiffsDiffs = {
   diffsWithbreadcrumbsPathsDiffs: Diffs
 }
 
+type combinationWithDiffsDiff = {
+  combination: EventHistoryWithBitId[]
+  diffsDiffs: DiffsDiffs
+}
+
+type combinationWithDiffsDiffs = combinationWithDiffsDiff[]
+
+type MatchingsByFile = {
+  fileNameA: string,
+  fileNameB: string,
+  matching: combinationWithDiffsDiffs
+}[]
+
 type State = {
+  file: HistoriesByFile
+  selectedFileA: string
+  selectedFileB: string
   combinationList: CombinationList
   diffsDiffsArr: DiffsDiffs[]
-  key: number,
-  dialog: boolean,
-  indexNumber: number,
+  key: number
+  dialog: boolean
+  indexNumber: number
   eventFiringElements: (string | null)[]
 }
 
@@ -113,12 +155,15 @@ export default defineComponent({
     const { historiesByFile } = useHistoriesByFileStore()
 
     const state = reactive<State>({
+      file: [],
+      selectedFileA: '',
+      selectedFileB: '',
       combinationList: [],
       diffsDiffsArr: [],
       dialog: false,
       key: 0,
       indexNumber: 2,
-      eventFiringElements: [null, null]
+      eventFiringElements: [null, null],
     })
 
     const getAllEventHistories = (file: HistoriesByFile): EventHistory[] => {
@@ -150,11 +195,28 @@ export default defineComponent({
       return combinationList
     }
 
+    const getCombinationListByFile = (
+      listA: EventHistoryWithBitId[],
+      listB: EventHistoryWithBitId[]
+    ): CombinationList => {
+      let combinationList = [] as CombinationList
+      for (let a = 0; a < listA.length; a++) {
+        for (let b = 0; b < listB.length; b++) {
+          combinationList.push([listA[a], listB[b]])
+        }
+      }
+      return combinationList
+    }
+
     const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i)
 
-    const generateCombinationList = () => {
+    onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
-      const allEventHistories = getAllEventHistories(file)
+      state.file = file
+    })
+
+    const generateCombinationList = () => {
+      const allEventHistories = getAllEventHistories(state.file)
       const bitList = createBitList(allEventHistories.length)
       const allEventHistoriesWithBitId = allEventHistories.map((x, i) => ({
         ...x,
@@ -162,23 +224,30 @@ export default defineComponent({
       }))
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
       state.combinationList = combinationList
-      calculateEditDistance(combinationList)
+      state.diffsDiffsArr = generateDiffsDiffsArr(combinationList)
     }
 
-    const calculateEditDistance = (combinationList: CombinationList) => {
+    const calculateEditDistance = (
+      A: EventHistoryWithBitId,
+      B: EventHistoryWithBitId
+    ) => {
+      const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
+      const diffsWithbreadcrumbsPathsDiffs = justDiff(
+        A.history.diffsWithbreadcrumbsPaths,
+        B.history.diffsWithbreadcrumbsPaths
+      )
+      return {
+        diffsDiffs,
+        diffsWithbreadcrumbsPathsDiffs,
+      }
+    }
+
+    const generateDiffsDiffsArr = (combinationList: CombinationList) => {
       const diffsDiffsArr = combinationList.map((combination) => {
         const [A, B] = combination
-        const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
-        const diffsWithbreadcrumbsPathsDiffs = justDiff(
-          A.history.diffsWithbreadcrumbsPaths,
-          B.history.diffsWithbreadcrumbsPaths
-        )
-        return {
-          diffsDiffs,
-          diffsWithbreadcrumbsPathsDiffs,
-        }
+        return calculateEditDistance(A, B)
       })
-      state.diffsDiffsArr = diffsDiffsArr
+      return diffsDiffsArr
     }
 
     const generateEventFiringElements = (
@@ -186,8 +255,16 @@ export default defineComponent({
       B: DataHistory,
       index: number
     ): (string | null)[] => {
-      const AEventFiringElement = getEventFiringElement(A.old.to, A.old.id, index);
-      const BEventFiringElement = getEventFiringElement(B.old.to, B.old.id, index);
+      const AEventFiringElement = getEventFiringElement(
+        A.old.to,
+        A.old.id,
+        index
+      )
+      const BEventFiringElement = getEventFiringElement(
+        B.old.to,
+        B.old.id,
+        index
+      )
       const AHtml = AEventFiringElement
         ? (toDom(AEventFiringElement).outerHTML as string)
         : null
@@ -202,23 +279,32 @@ export default defineComponent({
       const index = state.indexNumber * 2
       if (state.combinationList.length === 0) return [null, null]
       const [A, B] = state.combinationList[state.key]
-      return generateEventFiringElements(
-        A.history,
-        B.history,
-        index
-      )
+      return generateEventFiringElements(A.history, B.history, index)
     })
 
-    // watchEffect(() => {
-    //   if (state.combinationList.length === 0) return [null, null]
-    //   const index = state.key
-    //   const [A, B] = state.combinationList[state.key]
-    //   state.eventFiringElements = generateEventFiringElements(
-    //     A.history,
-    //     B.history,
-    //     index
-    //   )
-    // })
+    const addBitId = (x: EventHistory[]) =>
+      x.map((x, i) => ({ ...x, bitId: i }))
+
+    watchEffect(() => {
+      const fileNameA = state.selectedFileA
+      const fileNameB = state.selectedFileB
+      if (fileNameA === '' || fileNameB === '') return
+
+      const fileA = state.file.filter((x) => x.name === fileNameA)
+      const fileB = state.file.filter((x) => x.name === fileNameB)
+
+      console.log(state.file, fileA, fileB)
+
+      const AEventHistories = addBitId(getAllEventHistories(fileA))
+      const BEventHistories = addBitId(getAllEventHistories(fileB))
+
+      const combinationList = getCombinationListByFile(
+        AEventHistories,
+        BEventHistories
+      )
+      state.combinationList = combinationList
+      state.diffsDiffsArr = generateDiffsDiffsArr(combinationList)
+    })
 
     return {
       state,
