@@ -86,6 +86,11 @@ export default {
         },
         {
           icon: 'mdi-chart-bubble',
+          title: 'guessCombination',
+          to: '/guessCombination',
+        },
+        {
+          icon: 'mdi-chart-bubble',
           title: 'checkDiffs',
           to: '/checkDiffs',
         },

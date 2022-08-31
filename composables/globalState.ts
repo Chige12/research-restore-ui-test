@@ -24,3 +24,16 @@ export const useHistoriesByFileStore = () => {
     setHistoriesByFile,
   }
 }
+
+export const useMatchingsByFileStore = () => {
+  const initialState = [] as MatchingsByFile
+  const state = useState('matchingsByFile', () => initialState)
+  const setMatchingsByFile = (matchingsByFile: MatchingsByFile) => {
+    state.value = matchingsByFile
+  }
+
+  return {
+    historiesByFile: shallowReadonly(state),
+    setMatchingsByFile,
+  }
+}

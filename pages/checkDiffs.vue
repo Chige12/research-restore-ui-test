@@ -101,42 +101,20 @@
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
-import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
-import { DataHistory, HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
-import { Diffs } from '~/utils/recording/diffTypes'
-import { toDom } from 'hast-util-to-dom'
-import { getEventFiringElement } from '~/utils/getNewRootPathElements'
-
-type EventHistory = {
-  name: string
-  index: number
-  history: DataHistory
-}
-
-type EventHistoryWithBitId = EventHistory & {
-  bitId: number
-}
-
-type CombinationList = EventHistoryWithBitId[][]
-
-type DiffsDiffs = {
-  diffsDiffs: Diffs
-  diffsWithbreadcrumbsPathsDiffs: Diffs
-}
-
-type combinationWithDiffsDiff = {
-  combination: EventHistoryWithBitId[]
-  diffsDiffs: DiffsDiffs
-}
-
-type combinationWithDiffsDiffs = combinationWithDiffsDiff[]
-
-type MatchingsByFile = {
-  fileNameA: string,
-  fileNameB: string,
-  matching: combinationWithDiffsDiffs
-}[]
+import { HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
+import {
+  CombinationList,
+  DiffsDiffs,
+  EventHistory,
+} from '~/utils/checkDiffs/checkDiffsType'
+import {
+  generateDiffsDiffsArr,
+  getAllEventHistories,
+  generateEventFiringElements,
+  getCombinationList,
+  getCombinationListByFile,
+} from '~/utils/checkDiffs/checkDiffsUtils'
 
 type State = {
   file: HistoriesByFile
@@ -166,48 +144,6 @@ export default defineComponent({
       eventFiringElements: [null, null],
     })
 
-    const getAllEventHistories = (file: HistoriesByFile): EventHistory[] => {
-      let allEventHistories = [] as EventHistory[]
-      for (let i = 0; i < file.length; i++) {
-        for (let h = 0; h < file[i].histories.length; h++) {
-          const history = file[i].histories[h]
-          const oneEventHistory: EventHistory = {
-            name: file[i].name,
-            index: h,
-            history,
-          }
-          allEventHistories.push(oneEventHistory)
-        }
-      }
-      return allEventHistories
-    }
-
-    const getCombinationList = (
-      list: EventHistoryWithBitId[]
-    ): CombinationList => {
-      let combinationList = [] as CombinationList
-      for (let i = 0; i < list.length; i++) {
-        for (let j = 0; j < i; j++) {
-          if (list[i].name === list[j].name) continue
-          combinationList.push([list[i], list[j]])
-        }
-      }
-      return combinationList
-    }
-
-    const getCombinationListByFile = (
-      listA: EventHistoryWithBitId[],
-      listB: EventHistoryWithBitId[]
-    ): CombinationList => {
-      let combinationList = [] as CombinationList
-      for (let a = 0; a < listA.length; a++) {
-        for (let b = 0; b < listB.length; b++) {
-          combinationList.push([listA[a], listB[b]])
-        }
-      }
-      return combinationList
-    }
-
     const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i)
 
     onMounted(() => {
@@ -225,54 +161,6 @@ export default defineComponent({
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
       state.combinationList = combinationList
       state.diffsDiffsArr = generateDiffsDiffsArr(combinationList)
-    }
-
-    const calculateEditDistance = (
-      A: EventHistoryWithBitId,
-      B: EventHistoryWithBitId
-    ) => {
-      const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
-      const diffsWithbreadcrumbsPathsDiffs = justDiff(
-        A.history.diffsWithbreadcrumbsPaths,
-        B.history.diffsWithbreadcrumbsPaths
-      )
-      return {
-        diffsDiffs,
-        diffsWithbreadcrumbsPathsDiffs,
-      }
-    }
-
-    const generateDiffsDiffsArr = (combinationList: CombinationList) => {
-      const diffsDiffsArr = combinationList.map((combination) => {
-        const [A, B] = combination
-        return calculateEditDistance(A, B)
-      })
-      return diffsDiffsArr
-    }
-
-    const generateEventFiringElements = (
-      A: DataHistory,
-      B: DataHistory,
-      index: number
-    ): (string | null)[] => {
-      const AEventFiringElement = getEventFiringElement(
-        A.old.to,
-        A.old.id,
-        index
-      )
-      const BEventFiringElement = getEventFiringElement(
-        B.old.to,
-        B.old.id,
-        index
-      )
-      const AHtml = AEventFiringElement
-        ? (toDom(AEventFiringElement).outerHTML as string)
-        : null
-      const BHtml = BEventFiringElement
-        ? (toDom(BEventFiringElement).outerHTML as string)
-        : null
-      console.log(AHtml, BHtml)
-      return [AHtml, BHtml]
     }
 
     const eventFiringElements = computed(() => {
