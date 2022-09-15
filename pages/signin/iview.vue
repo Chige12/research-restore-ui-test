@@ -1,4 +1,5 @@
 <template>
+<div class="ma-8">
   <Form ref="formInline" :model="formInline" :rules="ruleInline" inline id="check-component">
     <FormItem prop="email">
       <Input type="text" v-model="formInline.email" placeholder="Email">
@@ -22,6 +23,7 @@
       <Button type="primary" @click="handleSubmit('formInline')">Signin</Button>
     </FormItem>
   </Form>
+  </div>
 </template>
 
 <script lang="ts">
