@@ -12,10 +12,10 @@
         >
           <v-row>
             <v-col cols="6">
-              <h4>A: {{ match.fileNameA }}</h4>
+              <h4>X: {{fileNameToAlphabet(match.fileNameA)}} | {{ match.fileNameA }}</h4>
             </v-col>
             <v-col cols="6">
-              <h4>A: {{ match.fileNameB }}</h4>
+              <h4>Y: {{fileNameToAlphabet(match.fileNameB)}} | {{ match.fileNameB }}</h4>
             </v-col>
           </v-row>
 
@@ -24,12 +24,12 @@
               <thead>
                 <tr>
                   <th class="text-left">bit</th>
-                  <th class="text-left">bitId [A]</th>
-                  <th class="text-left">name [A]</th>
-                  <th class="text-left">index [A]</th>
-                  <th class="text-left">index [B]</th>
-                  <th class="text-left">name [B]</th>
-                  <th class="text-left">bitId [B]</th>
+                  <th class="text-left">bitId [X]</th>
+                  <th class="text-left">name [X]</th>
+                  <th class="text-left">index [X]</th>
+                  <th class="text-left">index [Y]</th>
+                  <th class="text-left">name [Y]</th>
+                  <th class="text-left">bitId [Y]</th>
                   <th class="text-left">TED</th>
                   <th class="text-left">TED BcP</th>
                 </tr>
@@ -224,10 +224,14 @@ export default defineComponent({
 
     const guessCombination = () => {
       const combinationFiles = getFileCombination(state.file)
-      console.log(combinationFiles)
       const matchingsByFile = [] as MatchingsByFile
       for (let i = 0; i < combinationFiles.length; i++) {
-        const [fileA, fileB] = combinationFiles[i]
+        const sortedCombinationFile = cloneDeep(combinationFiles[i]).sort((a, b) => {
+          const ad = fileNameToAlphabet(a.name).toLowerCase()
+          const bd = fileNameToAlphabet(b.name).toLowerCase()
+          return ad < bd ? -1 : 1
+        })
+        const [fileA, fileB] = sortedCombinationFile
         const AEventHistories = addBitId(getAllEventHistories([fileA]))
         const BEventHistories = addBitId(getAllEventHistories([fileB]))
         const combinationList = getCombinationListByFile(
@@ -241,14 +245,27 @@ export default defineComponent({
             return { combination, diffsDiffs }
           })
         const matching = minimumCostBipartiteMatching(combinationWithDiffsDiffs)
-        matchingsByFile.push({
-          fileNameA: combinationFiles[i][0].name,
-          fileNameB: combinationFiles[i][1].name,
+
+        const matchingWithFileName = {
+          fileNameA: sortedCombinationFile[0].name,
+          fileNameB: sortedCombinationFile[1].name,
           matching,
-        })
+        }
+        matchingsByFile.push(matchingWithFileName)
       }
-      console.log(matchingsByFile)
-      state.matchingsByFile = matchingsByFile
+
+      const sortedMatchingsByFile = cloneDeep(matchingsByFile).sort((a, b) => {
+        const a1 = fileNameToAlphabet(a.fileNameA).toLowerCase()
+        const a2 = fileNameToAlphabet(b.fileNameA).toLowerCase()
+        const b1 = fileNameToAlphabet(a.fileNameB).toLowerCase()
+        const b2 = fileNameToAlphabet(b.fileNameB).toLowerCase()
+        if (a1 < a2) return -1
+        if (a1 > a2) return 1
+        if (b1 < b2) return -1
+        if (b1 > b2) return 1
+        return 0
+      })
+      state.matchingsByFile = sortedMatchingsByFile
     }
 
     const minimumCostBipartiteMatching = (
@@ -307,11 +324,29 @@ export default defineComponent({
       return combinationFiles
     }
 
+    const fileNameToAlphabet = (fileName: string): string => {
+      switch (fileName) {
+        case 'diffHistories-signin-comp01.json':
+          return 'A'
+        case 'diffHistories-signin-comp02.json':
+          return 'B'
+        case 'diffHistories-signin-elementUI.json':
+          return 'C'
+        case 'diffHistories-signin-iView.json':
+          return 'D'
+        case 'diffHistories-signin-comp01-2.json':
+          return 'E'
+        default:
+          return fileName
+      }
+    }
+
     return {
       state,
       historiesByFile,
       eventFiringElements,
       guessCombination,
+      fileNameToAlphabet,
     }
   },
 })
