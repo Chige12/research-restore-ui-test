@@ -20,11 +20,6 @@ export type StyleDiffs = {
   diff: JustDiff
 }
 
-export type JsonFile = {
-  diffHistories: Array<DiffHistory>
-  allElementStylesPerDiff: StylesPerElements[]
-}
-
 export type Data = {
   rootElement: HTMLElement | null
   hastHistories: Array<HastHistory>

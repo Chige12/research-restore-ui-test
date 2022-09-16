@@ -52,15 +52,14 @@
 import axios from 'axios'
 import { HastNode } from 'hast-util-from-dom/lib'
 import { defineComponent, reactive } from 'vue'
-import { JsonFile } from '~/mixins/deepDiffType'
+import { diff as justDiff } from 'just-diff'
 import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
 import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import {
   createDiffsWithBreadcrumbsPath,
   DataHistory,
 } from '~/utils/createDiffs/breadcrumbs'
-import { JsonFileArr } from './checkPercent.vue'
-import { diff as justDiff } from 'just-diff'
+import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 
@@ -78,12 +77,9 @@ export default defineComponent({
     })
 
     const getAndSetStateJsonFileNames = async () => {
-      const fileNamelist: string[] = await axios
-        .get(`/fileNameList.json`)
-        .then((x) => {
-          return x.data
-        })
-      state.jsonFileNames = fileNamelist
+      state.jsonFileNames = await axios.get(`/fileNameList.json`).then((x) => {
+        return x.data
+      })
       console.log(state.jsonFileNames)
     }
 
@@ -92,21 +88,23 @@ export default defineComponent({
     const openJson = async () => {
       if (state.jsonFileNames.length === 0) return
       console.log('open json ...')
-      const jsonFileArr = await Promise.all(
+
+      const jsonFiles = await Promise.all(
         state.jsonFileNames.map(async (name) => {
-          const json: JsonFile = await axios.get(`/json/${name}`).then((x) => {
+          const data: JsonFile = await axios.get(`/json/${name}`).then((x) => {
             return x.data
           })
-          return { name, json }
+          return { name, data }
         })
       )
+
       console.log('open!')
-      openJsonHistory(jsonFileArr)
+      openJsonHistory(jsonFiles)
     }
 
-    const openJsonHistory = (jsonFileArr: JsonFileArr) => {
-      const historiesByFile = jsonFileArr.map((file) => {
-        const { diffHistories } = file.json
+    const openJsonHistory = (jsonFiles: JsonFiles) => {
+      const historiesByFile = jsonFiles.map((file) => {
+        const { diffHistories } = file.data
         const histories = openDiffHistories(diffHistories)
         return { name: file.name, histories }
       })
@@ -147,7 +145,7 @@ export default defineComponent({
         toNewRootHast
       )
       const history = {
-        old: {to: toHast, id},
+        old: { to: toHast, id },
         from: fromNewRootHast,
         to: toNewRootHast,
         diffs,

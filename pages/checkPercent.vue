@@ -53,10 +53,8 @@ import {
   getCountedProperties,
   CountedProperties,
 } from '~/utils/checkPercent/cssPropeties'
-import { JsonFile } from '~/mixins/deepDiffType'
 import { DiffHistory } from '~/utils/recording/diffTypes'
-
-export type JsonFileArr = { name: string; json: JsonFile }[]
+import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 
 type Data = {
   jsonFileNameArr: string[]
@@ -106,7 +104,9 @@ export default defineComponent({
   },
   mounted() {
     const getJsonFileNames = async () => {
-      const fileNamelist: string[] = await this.$axios.$get(`/fileNameList.json`)
+      const fileNamelist: string[] = await this.$axios.$get(
+        `/fileNameList.json`
+      )
       this.jsonFileNameArr = fileNamelist
     }
 
@@ -114,21 +114,21 @@ export default defineComponent({
   },
   methods: {
     async openJson() {
-      const jsonFileArr = await Promise.all(
+      const jsonFiles = await Promise.all(
         this.jsonFileNameArr.map(async (name) => {
-          const json: JsonFile = await this.$axios.$get(`/json/${name}`)
-          return { name, json }
+          const data: JsonFile = await this.$axios.$get(`/json/${name}`)
+          return { name, data }
         })
       )
-      // this.openJsonHistory(jsonFileArr)
-      this.checkProperty(jsonFileArr)
+      // this.openJsonHistory(jsonFiles)
+      this.checkProperty(jsonFiles)
     },
     orgRound(value: number, base: number): number {
       return Math.round(value * base) / base
     },
-    checkProperty(jsonFileArr: JsonFileArr) {
-      jsonFileArr.forEach((file) => {
-        this.openJsonCssPropeties(file.json)
+    checkProperty(jsonFiles: JsonFiles) {
+      jsonFiles.forEach((file) => {
+        this.openJsonCssPropeties(file.data)
       })
     },
     openJsonCssPropeties(obj: JsonFile) {
