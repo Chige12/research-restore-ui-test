@@ -306,7 +306,9 @@ export default defineComponent({
           return index === combY.index
         })
 
-        if (!isAIndexExist && !isBIndexExist && !isAEventIdExist && !isBEventIdExist) {
+        const isSameEventAction = combX.history.eventInfo.event === combY.history.eventInfo.event
+
+        if (!isAIndexExist && !isBIndexExist && !isAEventIdExist && !isBEventIdExist && isSameEventAction) {
           matchingArr.push(comb)
           XeventIdArr.push( combX.history.eventInfo.eventId )
           YeventIdArr.push( combY.history.eventInfo.eventId )
