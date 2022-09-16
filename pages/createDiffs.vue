@@ -62,6 +62,7 @@ import {
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
+import { EventInfo } from '~/utils/recording/eventTypes'
 
 type State = {
   isExistJsonFile: boolean
@@ -132,7 +133,7 @@ export default defineComponent({
 
         const id = eventInfo.eventId
         if (!id) console.log('ID is noting!', id)
-        const history = createHistory(toHast, fromHast, id)
+        const history = createHistory(toHast, fromHast, eventInfo)
         histories.push(history)
       }
       return histories
@@ -141,10 +142,10 @@ export default defineComponent({
     const createHistory = (
       toHast: HastNode,
       fromHast: HastNode,
-      id: string
+      eventInfo: EventInfo
     ): DataHistory => {
-      const toNewRootHast = getNewRootPathElements(toHast, id)
-      const fromNewRootHast = getNewRootPathElements(fromHast, id)
+      const toNewRootHast = getNewRootPathElements(toHast, eventInfo.eventId)
+      const fromNewRootHast = getNewRootPathElements(fromHast, eventInfo.eventId)
       const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
       const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(
         diffs,
@@ -152,7 +153,7 @@ export default defineComponent({
       )
       const history = {
         oldFormat: { to: toHast },
-        rootElementId: id,
+        eventInfo,
         from: fromNewRootHast,
         to: toNewRootHast,
         diffs,

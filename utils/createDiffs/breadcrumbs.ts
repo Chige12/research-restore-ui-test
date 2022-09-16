@@ -3,11 +3,12 @@ import get from 'lodash/get'
 import { hasProperty } from '../check'
 import { newRootElement } from '../getNewRootPathElements'
 import { Diff, Diffs, Path } from '../recording/diffTypes'
+import { EventInfo } from '../recording/eventTypes'
 import { CSSStyle } from '../recording/styles'
 
 export type DataHistory = {
   oldFormat: { to: HastNode }
-  rootElementId: string
+  eventInfo: EventInfo
   to: newRootElement
   from: newRootElement
   diffs: Diffs

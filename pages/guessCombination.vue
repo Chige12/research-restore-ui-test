@@ -201,12 +201,12 @@ export default defineComponent({
     ): (string | null)[] => {
       const AEventFiringElement = getEventFiringElement(
         A.oldFormat.to,
-        A.rootElementId,
+        A.eventInfo.eventId,
         index
       )
       const BEventFiringElement = getEventFiringElement(
         B.oldFormat.to,
-        B.rootElementId,
+        B.eventInfo.eventId,
         index
       )
       const AHtml = AEventFiringElement
@@ -293,10 +293,10 @@ export default defineComponent({
         const [combX, combY] = comb.combination
 
         const isAEventIdExist = XeventIdArr.some((id: string)=> {
-          return id === combX.history.rootElementId 
+          return id === combX.history.eventInfo.eventId 
         })
         const isBEventIdExist = YeventIdArr.some((id: string)=> {
-          return id === combY.history.rootElementId 
+          return id === combY.history.eventInfo.eventId 
         })
 
         const isAIndexExist = XIndexArr.some((index: number)=> {
@@ -308,8 +308,8 @@ export default defineComponent({
 
         if (!isAIndexExist && !isBIndexExist && !isAEventIdExist && !isBEventIdExist) {
           matchingArr.push(comb)
-          XeventIdArr.push( combX.history.rootElementId )
-          YeventIdArr.push( combY.history.rootElementId )
+          XeventIdArr.push( combX.history.eventInfo.eventId )
+          YeventIdArr.push( combY.history.eventInfo.eventId )
           XIndexArr.push(combX.index)
           YIndexArr.push(combY.index)
         }
