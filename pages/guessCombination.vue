@@ -12,10 +12,10 @@
         >
           <v-row>
             <v-col cols="6">
-              <h4>X: {{fileNameToAlphabet(match.fileNameA)}} | {{ match.fileNameA }}</h4>
+              <h4>X: {{fileNameToAlphabet(match.fileNameX)}} | {{ match.fileNameX }}</h4>
             </v-col>
             <v-col cols="6">
-              <h4>Y: {{fileNameToAlphabet(match.fileNameB)}} | {{ match.fileNameB }}</h4>
+              <h4>Y: {{fileNameToAlphabet(match.fileNameY)}} | {{ match.fileNameY }}</h4>
             </v-col>
           </v-row>
 
@@ -100,7 +100,7 @@ import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
 import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
-import { DataHistory, HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
+import { DataHistory, HistoriesByFile, HistoryAndFileName } from '~/utils/createDiffs/breadcrumbs'
 import { Diffs } from '~/utils/recording/diffTypes'
 import { toDom } from 'hast-util-to-dom'
 import { getEventFiringElement } from '~/utils/getNewRootPathElements'
@@ -132,10 +132,15 @@ type combinationWithDiffsDiff = {
 type combinationWithDiffsDiffs = combinationWithDiffsDiff[]
 
 export type MatchingsByFile = {
-  fileNameA: string
-  fileNameB: string
+  fileNameX: string
+  fileNameY: string
   matching: combinationWithDiffsDiffs
 }[]
+
+type FileCombination = {
+  fileX: HistoryAndFileName,
+  fileY: HistoryAndFileName,
+}
 
 type State = {
   file: HistoriesByFile
@@ -170,16 +175,18 @@ export default defineComponent({
     onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
       state.file = file
+
+      guessCombination()
     })
 
     const calculateEditDistance = (
-      A: EventHistoryWithBitId,
-      B: EventHistoryWithBitId
+      x: DataHistory,
+      y: DataHistory
     ) => {
-      const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
+      const diffsDiffs = justDiff(x.diffs, y.diffs)
       const diffsWithbreadcrumbsPathsDiffs = justDiff(
-        A.history.diffsWithbreadcrumbsPaths,
-        B.history.diffsWithbreadcrumbsPaths
+        x.diffsWithbreadcrumbsPaths,
+        y.diffsWithbreadcrumbsPaths
       )
       return {
         diffsDiffs,
@@ -224,42 +231,38 @@ export default defineComponent({
 
     const guessCombination = () => {
       // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
-      const combinationFiles = getFileCombination(state.file)
+      const fileCombinations = getFileCombination(state.file)
       const matchingsByFile = [] as MatchingsByFile
-      for (let i = 0; i < combinationFiles.length; i++) {
-        const sortedCombinationFile = cloneDeep(combinationFiles[i]).sort((a, b) => {
-          const ad = fileNameToAlphabet(a.name).toLowerCase()
-          const bd = fileNameToAlphabet(b.name).toLowerCase()
-          return ad < bd ? -1 : 1
-        })
-        const [fileA, fileB] = sortedCombinationFile
-        const AEventHistories = addBitId(getAllEventHistories([fileA]))
-        const BEventHistories = addBitId(getAllEventHistories([fileB]))
-        const combinationList = getCombinationListByFile(
-          AEventHistories,
-          BEventHistories
+      for (let i = 0; i < fileCombinations.length; i++) {
+        
+        const {fileX, fileY} = fileCombinations[i]
+        const fileXEventHistories = addBitId(getAllEventHistories([fileX]))
+        const fileYEventHistories = addBitId(getAllEventHistories([fileY]))
+        const historyCombinations = getCombinationListByFile(
+          fileXEventHistories,
+          fileYEventHistories
         )
         const combinationWithDiffsDiffs: combinationWithDiffsDiffs =
-          combinationList.map((combination) => {
-            const [A, B] = combination
-            const diffsDiffs = calculateEditDistance(A, B)
+          historyCombinations.map((combination) => {
+            const [X, Y] = combination
+            const diffsDiffs = calculateEditDistance(X.history, Y.history)
             return { combination, diffsDiffs }
           })
         const matching = minimumCostBipartiteMatching(combinationWithDiffsDiffs)
 
         const matchingWithFileName = {
-          fileNameA: sortedCombinationFile[0].name,
-          fileNameB: sortedCombinationFile[1].name,
+          fileNameX: fileX.name,
+          fileNameY: fileY.name,
           matching,
         }
         matchingsByFile.push(matchingWithFileName)
       }
 
       const sortedMatchingsByFile = cloneDeep(matchingsByFile).sort((a, b) => {
-        const a1 = fileNameToAlphabet(a.fileNameA).toLowerCase()
-        const a2 = fileNameToAlphabet(b.fileNameA).toLowerCase()
-        const b1 = fileNameToAlphabet(a.fileNameB).toLowerCase()
-        const b2 = fileNameToAlphabet(b.fileNameB).toLowerCase()
+        const a1 = fileNameToAlphabet(a.fileNameX).toLowerCase()
+        const a2 = fileNameToAlphabet(b.fileNameX).toLowerCase()
+        const b1 = fileNameToAlphabet(a.fileNameY).toLowerCase()
+        const b2 = fileNameToAlphabet(b.fileNameY).toLowerCase()
         if (a1 < a2) return -1
         if (a1 > a2) return 1
         if (b1 < b2) return -1
@@ -281,48 +284,58 @@ export default defineComponent({
       })
 
       const matchingArr = [] as combinationWithDiffsDiffs
-      const AeventIdArr = [] as string[]
-      const AIndexArr = [] as number[]
-      const BeventIdArr = [] as string[]
-      const BIndexArr = [] as number[]
+      const XeventIdArr = [] as string[]
+      const XIndexArr = [] as number[]
+      const YeventIdArr = [] as string[]
+      const YIndexArr = [] as number[]
       for (let i = 0; i < sortedcombinationWithDiffsDiffs.length; i++) {
         const comb = sortedcombinationWithDiffsDiffs[i]
-        const [combA, combB] = comb.combination
+        const [combX, combY] = comb.combination
 
-        const isAEventIdExist = AeventIdArr.some((id: string)=> {
-          return id === combA.history.rootElementId 
+        const isAEventIdExist = XeventIdArr.some((id: string)=> {
+          return id === combX.history.rootElementId 
         })
-        const isBEventIdExist = BeventIdArr.some((id: string)=> {
-          return id === combB.history.rootElementId 
+        const isBEventIdExist = YeventIdArr.some((id: string)=> {
+          return id === combY.history.rootElementId 
         })
 
-        const isAIndexExist = AIndexArr.some((index: number)=> {
-          return index === combA.index
+        const isAIndexExist = XIndexArr.some((index: number)=> {
+          return index === combX.index
         })
-        const isBIndexExist = BIndexArr.some((index: number)=> {
-          return index === combB.index
+        const isBIndexExist = YIndexArr.some((index: number)=> {
+          return index === combY.index
         })
 
         if (!isAIndexExist && !isBIndexExist && !isAEventIdExist && !isBEventIdExist) {
           matchingArr.push(comb)
-          AeventIdArr.push( combA.history.rootElementId )
-          BeventIdArr.push( combB.history.rootElementId )
-          AIndexArr.push(combA.index)
-          BIndexArr.push(combB.index)
+          XeventIdArr.push( combX.history.rootElementId )
+          YeventIdArr.push( combY.history.rootElementId )
+          XIndexArr.push(combX.index)
+          YIndexArr.push(combY.index)
         }
       }
       return matchingArr
     }
 
-    const getFileCombination = (files: HistoriesByFile): HistoriesByFile[] => {
-      let combinationFiles = [] as HistoriesByFile[]
+    const sortFilesByName = (files: HistoriesByFile): HistoriesByFile => {
+      return files.sort((a, b) => {
+        const ad = fileNameToAlphabet(a.name).toLowerCase()
+        const bd = fileNameToAlphabet(b.name).toLowerCase()
+        return ad < bd ? -1 : 1
+      })
+    }
+
+    const getFileCombination = (files: HistoriesByFile): FileCombination[] => {
+      let fileCombinations = [] as FileCombination[]
       for (let i = 0; i < files.length; i++) {
         for (let j = 0; j < i; j++) {
           if (files[i].name === files[j].name) continue
-          combinationFiles.push([files[i], files[j]])
+          const sortedFiles = sortFilesByName([files[i], files[j]])
+          const fileCombination = {fileX: sortedFiles[i], fileY: sortedFiles[j]}
+          fileCombinations.push(fileCombination)
         }
       }
-      return combinationFiles
+      return fileCombinations
     }
 
     const fileNameToAlphabet = (fileName: string): string => {
