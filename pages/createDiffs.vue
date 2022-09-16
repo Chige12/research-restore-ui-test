@@ -1,5 +1,5 @@
 <template>
-  <div v-if="state.jsonFileNameArr.length !== 0">
+  <div v-if="state.jsonFileNames.length !== 0">
     <v-btn @click="openJson">open Json File!</v-btn>
     <v-btn @click="createJsonFile">create Json File!</v-btn>
     <div class="mx-6" v-for="file in storeHistoriesByFile" :key="file.name">
@@ -65,7 +65,7 @@ import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 
 type State = {
-  jsonFileNameArr: string[]
+  jsonFileNames: string[]
 }
 
 export default defineComponent({
@@ -74,26 +74,26 @@ export default defineComponent({
       useHistoriesByFileStore()
 
     const state = reactive<State>({
-      jsonFileNameArr: [],
+      jsonFileNames: [],
     })
 
-    const getJsonFileNames = async () => {
+    const getAndSetStateJsonFileNames = async () => {
       const fileNamelist: string[] = await axios
         .get(`/fileNameList.json`)
         .then((x) => {
           return x.data
         })
-      state.jsonFileNameArr = fileNamelist
-      console.log(state.jsonFileNameArr)
+      state.jsonFileNames = fileNamelist
+      console.log(state.jsonFileNames)
     }
 
-    getJsonFileNames()
+    getAndSetStateJsonFileNames()
 
     const openJson = async () => {
-      if (state.jsonFileNameArr.length === 0) return
+      if (state.jsonFileNames.length === 0) return
       console.log('open json ...')
       const jsonFileArr = await Promise.all(
-        state.jsonFileNameArr.map(async (name) => {
+        state.jsonFileNames.map(async (name) => {
           const json: JsonFile = await axios.get(`/json/${name}`).then((x) => {
             return x.data
           })
