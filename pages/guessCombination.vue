@@ -175,8 +175,6 @@ export default defineComponent({
     onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
       state.file = file
-
-      guessCombination()
     })
 
     const calculateEditDistance = (
@@ -333,7 +331,7 @@ export default defineComponent({
         for (let j = 0; j < i; j++) {
           if (files[i].name === files[j].name) continue
           const sortedFiles = sortFilesByName([files[i], files[j]])
-          const fileCombination = {fileX: sortedFiles[i], fileY: sortedFiles[j]}
+          const fileCombination = {fileX: sortedFiles[0], fileY: sortedFiles[1]}
           fileCombinations.push(fileCombination)
         }
       }
