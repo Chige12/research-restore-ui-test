@@ -223,6 +223,7 @@ export default defineComponent({
       x.map((x, i) => ({ ...x, bitId: i }))
 
     const guessCombination = () => {
+      // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
       const combinationFiles = getFileCombination(state.file)
       const matchingsByFile = [] as MatchingsByFile
       for (let i = 0; i < combinationFiles.length; i++) {
