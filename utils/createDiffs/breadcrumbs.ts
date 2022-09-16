@@ -6,7 +6,8 @@ import { Diff, Diffs, Path } from '../recording/diffTypes'
 import { CSSStyle } from '../recording/styles'
 
 export type DataHistory = {
-  old: { to: HastNode; id: string }
+  oldFormat: { to: HastNode }
+  rootElementId: string
   to: newRootElement
   from: newRootElement
   diffs: Diffs

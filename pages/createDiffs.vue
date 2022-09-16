@@ -1,6 +1,6 @@
 <template>
-  <div v-if="state.jsonFileNames.length !== 0">
-    <v-btn @click="openJson">open Json File!</v-btn>
+  <div v-if="state.isExistJsonFile">
+    <v-btn @click="updateHistoriesByFile"> update! </v-btn>
     <v-btn @click="createJsonFile">create Json File!</v-btn>
     <div class="mx-6" v-for="file in storeHistoriesByFile" :key="file.name">
       <h3>file {{ file.name }}</h3>
@@ -64,7 +64,7 @@ import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 
 type State = {
-  jsonFileNames: string[]
+  isExistJsonFile: boolean
 }
 
 export default defineComponent({
@@ -73,61 +73,67 @@ export default defineComponent({
       useHistoriesByFileStore()
 
     const state = reactive<State>({
-      jsonFileNames: [],
+      isExistJsonFile: false,
     })
 
-    const getAndSetStateJsonFileNames = async () => {
-      state.jsonFileNames = await axios.get(`/fileNameList.json`).then((x) => {
-        return x.data
-      })
-      console.log(state.jsonFileNames)
+    onMounted(() => {
+      updateHistoriesByFile()
+    })
+    
+    const updateHistoriesByFile = async () => {
+      const jsonFiles = await getJsonFiles()
+      if (!jsonFiles) return
+
+      const historiesByFile = createHistoriesByFile(jsonFiles)
+      setHistoriesByFile(historiesByFile)
     }
 
-    getAndSetStateJsonFileNames()
+    const getAndSetStateJsonFileNames = async (): Promise<string[]> => {
+      const jsonFileNames = await axios.get(`/fileNameList.json`).then((x) => {
+        return x.data
+      })
+      state.isExistJsonFile = jsonFileNames.length !== 0
+      return jsonFileNames
+    }
 
-    const openJson = async () => {
-      if (state.jsonFileNames.length === 0) return
-      console.log('open json ...')
-
-      const jsonFiles = await Promise.all(
-        state.jsonFileNames.map(async (name) => {
+    const getJsonFiles = async (): Promise<JsonFiles | null> => {
+      const jsonFileNames = await getAndSetStateJsonFileNames()
+      if (jsonFileNames.length === 0) return null
+      console.log('open json file ...')
+      return await Promise.all(
+        jsonFileNames.map(async (name) => {
           const data: JsonFile = await axios.get(`/json/${name}`).then((x) => {
             return x.data
           })
           return { name, data }
         })
       )
-
-      console.log('open!')
-      openJsonHistory(jsonFiles)
     }
 
-    const openJsonHistory = (jsonFiles: JsonFiles) => {
-      const historiesByFile = jsonFiles.map((file) => {
+    const createHistoriesByFile = (jsonFiles: JsonFiles) => {
+      return jsonFiles.map((file) => {
         const { diffHistories } = file.data
-        const histories = openDiffHistories(diffHistories)
+        const histories = createHistories(diffHistories)
         return { name: file.name, histories }
       })
-
-      setHistoriesByFile(historiesByFile)
     }
 
-    const openDiffHistories = (
+    const createHistories = (
       diffHistories: Array<DiffHistory>
     ): DataHistory[] => {
       let histories = []
       for (let i = 0; i < diffHistories.length; i++) {
         const { to, from } = diffHistories[i]
-        if (!!to && !!from) {
-          const { eventInfo, hast: toHast } = to
-          const { hast: fromHast } = from
-          if (!eventInfo) continue
+        if (!to || !from) continue
 
-          const id = eventInfo.eventId
-          if (!id) console.log('ID is noting!', id)
-          const history = createHistory(toHast, fromHast, id)
-          histories.push(history)
-        }
+        const { hast: toHast, eventInfo } = to
+        const { hast: fromHast } = from
+        if (!eventInfo) continue
+
+        const id = eventInfo.eventId
+        if (!id) console.log('ID is noting!', id)
+        const history = createHistory(toHast, fromHast, id)
+        histories.push(history)
       }
       return histories
     }
@@ -145,13 +151,13 @@ export default defineComponent({
         toNewRootHast
       )
       const history = {
-        old: { to: toHast, id },
+        oldFormat: { to: toHast },
+        rootElementId: id,
         from: fromNewRootHast,
         to: toNewRootHast,
         diffs,
         diffsWithbreadcrumbsPaths,
       }
-      console.log(history)
       return history
     }
 
@@ -165,7 +171,7 @@ export default defineComponent({
     return {
       state,
       storeHistoriesByFile,
-      openJson,
+      updateHistoriesByFile,
       createJsonFile,
     }
   },
