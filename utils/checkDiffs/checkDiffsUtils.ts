@@ -78,8 +78,16 @@ export const generateEventFiringElements = (
   B: DataHistory,
   index: number
 ): (string | null)[] => {
-  const AEventFiringElement = getEventFiringElement(A.old.to, A.old.id, index)
-  const BEventFiringElement = getEventFiringElement(B.old.to, B.old.id, index)
+  const AEventFiringElement = getEventFiringElement(
+    A.oldFormat.to,
+    A.eventInfo.eventId,
+    index
+  )
+  const BEventFiringElement = getEventFiringElement(
+    B.oldFormat.to,
+    B.eventInfo.eventId,
+    index
+  )
   const AHtml = AEventFiringElement
     ? (toDom(AEventFiringElement).outerHTML as string)
     : null
