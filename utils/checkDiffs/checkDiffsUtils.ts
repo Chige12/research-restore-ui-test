@@ -38,13 +38,13 @@ export const getCombinationList = (
 }
 
 export const getCombinationListByFile = (
-  listA: EventHistoryWithBitId[],
-  listB: EventHistoryWithBitId[]
+  listX: EventHistoryWithBitId[],
+  listY: EventHistoryWithBitId[]
 ): CombinationList => {
   let combinationList = [] as CombinationList
-  for (let a = 0; a < listA.length; a++) {
-    for (let b = 0; b < listB.length; b++) {
-      combinationList.push([listA[a], listB[b]])
+  for (let a = 0; a < listX.length; a++) {
+    for (let b = 0; b < listY.length; b++) {
+      combinationList.push([listX[a], listY[b]])
     }
   }
   return combinationList
