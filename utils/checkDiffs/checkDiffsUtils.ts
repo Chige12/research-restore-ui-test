@@ -1,4 +1,5 @@
 import { toDom } from 'hast-util-to-dom'
+import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
 import { DataHistory, HistoriesByFile } from '../createDiffs/breadcrumbs'
 import { getEventFiringElement } from '../getNewRootPathElements'
@@ -89,11 +90,16 @@ export const generateEventFiringElements = (
     index
   )
   const AHtml = AEventFiringElement
-    ? (toDom(AEventFiringElement).outerHTML as string)
+    ? (getTextHtml(AEventFiringElement) as string)
     : null
   const BHtml = BEventFiringElement
-    ? (toDom(BEventFiringElement).outerHTML as string)
+    ? (getTextHtml(BEventFiringElement) as string)
     : null
   console.log(AHtml, BHtml)
   return [AHtml, BHtml]
+}
+
+export const getTextHtml = (hast: HastNode) => {
+  const node = toDom(hast) as Element
+  return node.outerHTML
 }

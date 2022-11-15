@@ -107,6 +107,7 @@ import { getEventFiringElement } from '~/utils/getNewRootPathElements'
 import {
   getAllEventHistories,
   getCombinationListByFile,
+  getTextHtml,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 
 type EventHistory = {
@@ -208,10 +209,10 @@ export default defineComponent({
         index
       )
       const AHtml = AEventFiringElement
-        ? (toDom(AEventFiringElement).outerHTML as string)
+        ? (getTextHtml(AEventFiringElement) as string)
         : null
       const BHtml = BEventFiringElement
-        ? (toDom(BEventFiringElement).outerHTML as string)
+        ? (getTextHtml(BEventFiringElement) as string)
         : null
       console.log(AHtml, BHtml)
       return [AHtml, BHtml]
