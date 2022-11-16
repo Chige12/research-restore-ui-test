@@ -20,7 +20,7 @@
               <div class="pr-4 text-right">Rows per page:</div>
             </Col>
             <Col span="2">
-              <Select v-model="rowsPerPage">
+              <Select v-model="rowsPerPage" class="select-rows-per-page">
                 <Option
                   v-for="item in rowsPerPageList"
                   :value="item.value"
@@ -49,7 +49,6 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
 import Mixin from '~/mixins/deepDiff'
 import { desserts, Dessert } from '~/assets/searchObj'
 
@@ -172,3 +171,8 @@ export default defineComponent({
   },
 })
 </script>
+<style>
+.v-application .select-rows-per-page ul{
+  padding: 0;
+}
+</style>
