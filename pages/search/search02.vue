@@ -2,20 +2,38 @@
   <v-container>
     <v-row justify="center" align="center">
       <v-col cols="12" sm="12" md="12">
-        <Space direction="vertical" size="large" type="flex" id="check-component">
-          <Input v-model="search" search placeholder="Enter something..." class="my-4"/>
-          <Table :columns="columns" :data="filteredDesserts"></Table>
+        <Space
+          direction="vertical"
+          size="large"
+          type="flex"
+          id="check-component"
+        >
+          <Input
+            v-model="search"
+            search
+            placeholder="Enter something..."
+            class="my-4"
+          />
+          <Table :columns="columns" :data="searchedDesserts"></Table>
           <Row justify="end" align="middle" class="code-row-bg mt-4">
             <Col span="3">
               <div class="pr-4 text-right">Rows per page:</div>
             </Col>
             <Col span="2">
               <Select v-model="rowsPerPage">
-                <Option v-for="item in rowsPerPageList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+                <Option
+                  v-for="item in rowsPerPageList"
+                  :value="item.value"
+                  :key="item.value"
+                  >{{ item.label }}</Option
+                >
               </Select>
             </Col>
             <Col span="3">
-              <div class="pr-4 text-right">1-10 of 10</div>
+              <div class="pr-4 text-right">
+                {{ firstItemNumber }}-{{ endItemNumber }} of
+                {{ desserts.length }}
+              </div>
             </Col>
             <Col span="2">
               <ButtonGroup>
@@ -24,7 +42,6 @@
               </ButtonGroup>
             </Col>
           </Row>
-          
         </Space>
       </v-col>
     </v-row>
@@ -36,17 +53,21 @@ import Vue from 'vue'
 import Mixin from '~/mixins/deepDiff'
 import { desserts, Dessert } from '~/assets/searchObj'
 
+type RowsPerPage = number | 'All'
+
 type Data = {
   search: string
   columns: {
     title: string
     key: string
   }[]
-  filteredDesserts: Dessert[]
+  searchedDesserts: Dessert[]
   desserts: Dessert[]
-  rowsPerPageList: {value: number | 'All', label: string}[],
-  rowsPerPage: number | 'All',
+  rowsPerPageList: { value: RowsPerPage; label: string }[]
+  rowsPerPage: RowsPerPage
   page: number
+  firstItemNumber: number
+  endItemNumber: number
 }
 
 const isMatch = (text: string, keyword: string) => {
@@ -70,38 +91,70 @@ export default Vue.extend({
         { title: 'Protein (g)', key: 'protein' },
         { title: 'Iron (%)', key: 'iron' },
       ],
-      filteredDesserts: desserts,
+      searchedDesserts: desserts,
       desserts: desserts,
       rowsPerPageList: [
-        {value: 5, label: '5'},
-        {value: 10, label: '10'},
-        {value: 15, label: '15'},
-        {value: 'All', label: 'All'}
+        { value: 5, label: '5' },
+        { value: 10, label: '10' },
+        { value: 15, label: '15' },
+        { value: 'All', label: 'All' },
       ],
       rowsPerPage: 10,
       page: 1,
+      firstItemNumber: 1,
+      endItemNumber: 10,
     }
   },
-  watch: {
-    search: function(newText: string, oldText: string) {
-      if (newText === oldText) return;
+  methods: {
+    calculateFirstItemNumber(rowsPerPage: RowsPerPage, page: number) {
+      if (rowsPerPage === 'All') return 1
+      return (page - 1) * rowsPerPage + 1
+    },
+    calculateEndItemNumber(rowsPerPage: RowsPerPage, page: number) {
+      if (rowsPerPage === 'All') return this.desserts.length
+      return (page - 1) * rowsPerPage + rowsPerPage
+    },
+    updateSearchedDesserts(
+      text: string,
+      rowsPerPage: RowsPerPage,
+      page: number
+    ) {
+      const filteredDesserts = !text
+        ? desserts
+        : desserts.filter((arr) => {
+            return (
+              isMatch(arr.name, text) ||
+              isMatch(arr.calories.toString(), text) ||
+              isMatch(arr.fat.toString(), text) ||
+              isMatch(arr.carbs.toString(), text) ||
+              isMatch(arr.protein.toString(), text) ||
+              isMatch(arr.iron.toString(), text)
+            )
+          })
+      this.firstItemNumber = this.calculateFirstItemNumber(rowsPerPage, page)
+      this.endItemNumber = this.calculateEndItemNumber(rowsPerPage, page)
 
-      if (!newText) {
-        this.filteredDesserts = this.desserts
+      if (rowsPerPage === 'All') {
+        this.searchedDesserts = filteredDesserts
+        this.page = 1
+        return
       }
-      console.log("search")
-
-      this.filteredDesserts = this.desserts.filter((arr) => {
-        return (
-          isMatch(arr.name, newText) ||
-          isMatch(arr.calories.toString(), newText) ||
-          isMatch(arr.fat.toString(), newText) ||
-          isMatch(arr.carbs.toString(), newText) ||
-          isMatch(arr.protein.toString(), newText) ||
-          isMatch(arr.iron.toString(), newText)
-        )
-      })
-    }
+      this.searchedDesserts = filteredDesserts.slice(
+        this.firstItemNumber - 1,
+        this.endItemNumber
+      )
+    },
+  },
+  watch: {
+    search(next: string) {
+      this.updateSearchedDesserts(next, this.rowsPerPage, this.page)
+    },
+    page(next: number) {
+      this.updateSearchedDesserts(this.search, this.rowsPerPage, next)
+    },
+    rowsPerPage(next: RowsPerPage) {
+      this.updateSearchedDesserts(this.search, next, this.page)
+    },
   },
 })
 </script>
