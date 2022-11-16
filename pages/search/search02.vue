@@ -37,8 +37,8 @@
             </Col>
             <Col span="2">
               <ButtonGroup>
-                <Button type="primary" icon="ios-arrow-back"></Button>
-                <Button type="primary" icon="ios-arrow-forward"></Button>
+                <Button type="primary" @click="goPrevPage()" :disabled="!isAbleGoPrev" icon="ios-arrow-back"></Button>
+                <Button type="primary" @click="goNextPage()" :disabled="!isAbleGoNext" icon="ios-arrow-forward"></Button>
               </ButtonGroup>
             </Col>
           </Row>
@@ -74,7 +74,7 @@ const isMatch = (text: string, keyword: string) => {
   return !text.trim().toLowerCase().indexOf(keyword.trim().toLowerCase())
 }
 
-export default Vue.extend({
+export default defineComponent({
   name: 'Search02',
   mixins: [Mixin],
   data(): Data {
@@ -105,7 +105,21 @@ export default Vue.extend({
       endItemNumber: 10,
     }
   },
+  computed: {
+    isAbleGoPrev(): boolean {
+      return this.firstItemNumber !== 1
+    },
+    isAbleGoNext(): boolean {
+      return this.endItemNumber < this.desserts.length
+    },
+  },
   methods: {
+    goPrevPage() {
+      this.page--
+    },
+    goNextPage() {
+      this.page++
+    },
     calculateFirstItemNumber(rowsPerPage: RowsPerPage, page: number) {
       if (rowsPerPage === 'All') return 1
       return (page - 1) * rowsPerPage + 1
