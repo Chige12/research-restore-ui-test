@@ -3,8 +3,28 @@
     <v-row justify="center" align="center">
       <v-col cols="12" sm="12" md="12">
         <Space direction="vertical" size="large" type="flex" id="check-component">
-          <Input v-model="search" search placeholder="Enter something..." class=""/>
+          <Input v-model="search" search placeholder="Enter something..." class="my-4"/>
           <Table :columns="columns" :data="filteredDesserts"></Table>
+          <Row justify="end" align="middle" class="code-row-bg mt-4">
+            <Col span="3">
+              <div class="pr-4 text-right">Rows per page:</div>
+            </Col>
+            <Col span="2">
+              <Select v-model="rowsPerPage">
+                <Option v-for="item in rowsPerPageList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+            </Col>
+            <Col span="3">
+              <div class="pr-4 text-right">1-10 of 10</div>
+            </Col>
+            <Col span="2">
+              <ButtonGroup>
+                <Button type="primary" icon="ios-arrow-back"></Button>
+                <Button type="primary" icon="ios-arrow-forward"></Button>
+              </ButtonGroup>
+            </Col>
+          </Row>
+          
         </Space>
       </v-col>
     </v-row>
@@ -24,6 +44,9 @@ type Data = {
   }[]
   filteredDesserts: Dessert[]
   desserts: Dessert[]
+  rowsPerPageList: {value: number | 'All', label: string}[],
+  rowsPerPage: number | 'All',
+  page: number
 }
 
 const isMatch = (text: string, keyword: string) => {
@@ -49,6 +72,14 @@ export default Vue.extend({
       ],
       filteredDesserts: desserts,
       desserts: desserts,
+      rowsPerPageList: [
+        {value: 5, label: '5'},
+        {value: 10, label: '10'},
+        {value: 15, label: '15'},
+        {value: 'All', label: 'All'}
+      ],
+      rowsPerPage: 10,
+      page: 1,
     }
   },
   watch: {
