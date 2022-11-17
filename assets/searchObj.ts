@@ -88,4 +88,12 @@ export const desserts: Dessert[] = [
     protein: 7,
     iron: '6%',
   },
+  {
+    name: "Country ma'am",
+    calories: 51,
+    fat: 2.4,
+    carbs: 6.8,
+    protein: 0.5,
+    iron: '0%',
+  },
 ]
