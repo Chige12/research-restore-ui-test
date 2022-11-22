@@ -286,6 +286,7 @@ export default defineComponent({
       const XIndexArr = [] as number[]
       const YeventIdArr = [] as string[]
       const YIndexArr = [] as number[]
+      let prevTED = 0 as number
       for (let i = 0; i < sortedcombinationWithDiffsDiffs.length; i++) {
         const comb = sortedcombinationWithDiffsDiffs[i]
         const [combX, combY] = comb.combination
@@ -308,10 +309,16 @@ export default defineComponent({
 
         if (!isAIndexExist && !isBIndexExist && !isAEventIdExist && !isBEventIdExist && isSameEventType) {
           matchingArr.push(comb)
-          XeventIdArr.push( combX.history.eventInfo.eventId )
-          YeventIdArr.push( combY.history.eventInfo.eventId )
-          XIndexArr.push(combX.index)
-          YIndexArr.push(combY.index)
+          
+          const isSameTedToPrev = prevTED === comb.diffsDiffs.diffsDiffs.length
+          prevTED = comb.diffsDiffs.diffsDiffs.length
+          
+          if (!isSameTedToPrev) {
+            XeventIdArr.push( combX.history.eventInfo.eventId )
+            YeventIdArr.push( combY.history.eventInfo.eventId )
+            XIndexArr.push(combX.index)
+            YIndexArr.push(combY.index)
+          }
         }
       }
       return matchingArr
