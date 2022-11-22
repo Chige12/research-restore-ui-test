@@ -74,9 +74,11 @@ export default defineComponent({
     }
 
     const click = (e: Event) => {
+      console.log('click!')
       createHastHistory(EVENT.CLICK, e)
     }
     const keydown = (e: Event) => {
+      console.log('keydown!')
       createHastHistory(EVENT.KEY, e)
     }
 
