@@ -6,72 +6,95 @@
           <v-btn class="mb-2" @click="guessCombination"
             >guess comvination</v-btn
           >
-        <div
-          v-for="(match, m_key) in state.matchingsByFile"
-          :key="`match-${m_key}`"
-        >
-          <v-row>
-            <v-col cols="6">
-              <h4>X: {{fileNameToAlphabet(match.fileNameX)}} | {{ match.fileNameX }}</h4>
-            </v-col>
-            <v-col cols="6">
-              <h4>Y: {{fileNameToAlphabet(match.fileNameY)}} | {{ match.fileNameY }}</h4>
-            </v-col>
-          </v-row>
+          <div
+            v-for="(match, m_key) in state.matchingsByFile"
+            :key="`match-${m_key}`"
+          >
+            <v-row>
+              <v-col cols="6">
+                <h4>
+                  X: {{ fileNameToAlphabet(match.fileNameX) }} |
+                  {{ match.fileNameX }}
+                </h4>
+              </v-col>
+              <v-col cols="6">
+                <h4>
+                  Y: {{ fileNameToAlphabet(match.fileNameY) }} |
+                  {{ match.fileNameY }}
+                </h4>
+              </v-col>
+            </v-row>
 
-          <v-simple-table>
-            <template #default>
-              <thead>
-                <tr>
-                  <th class="text-left">bit</th>
-                  <th class="text-left">bitId [X]</th>
-                  <th class="text-left">name [X]</th>
-                  <th class="text-left">index [X]</th>
-                  <th class="text-left">index [Y]</th>
-                  <th class="text-left">name [Y]</th>
-                  <th class="text-left">bitId [Y]</th>
-                  <th class="text-left">TED</th>
-                  <th class="text-left">TED BcP</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(match, c_key) in match.matching"
-                  :key="`match.combination-${c_key}`"
-                >
-                  <td>
-                    {{
-                      match.combination[0].bitId + match.combination[1].bitId
-                    }}
-                  </td>
-                  <td>{{ match.combination[0].bitId }}</td>
-                  <td>{{ match.combination[0].name }}</td>
-                  <td>{{ match.combination[0].index }}</td>
-                  <td>{{ match.combination[1].index }}</td>
-                  <td>{{ match.combination[1].name }}</td>
-                  <td>{{ match.combination[1].bitId }}</td>
-                  <td>{{ match.diffsDiffs.diffsDiffs.length }}</td>
-                  <td>
-                    {{ match.diffsDiffs.diffsWithbreadcrumbsPathsDiffs.length }}
-                  </td>
-                  <td>
-                    <v-btn
-                      @click="() => {state.combKey = c_key; state.matchKey = m_key}"
-                      v-bind="attrs"
-                      v-on="on"
-                      small
-                      >Preview</v-btn
-                    >
-                  </td>
-                </tr>
-              </tbody>
-            </template>
-          </v-simple-table>
-        </div>
+            <v-simple-table>
+              <template #default>
+                <thead>
+                  <tr>
+                    <th class="text-left">bit</th>
+                    <th class="text-left">bitId [X]</th>
+                    <th class="text-left">name [X]</th>
+                    <th class="text-left">index [X]</th>
+                    <th class="text-left">index [Y]</th>
+                    <th class="text-left">name [Y]</th>
+                    <th class="text-left">bitId [Y]</th>
+                    <th class="text-left">TED</th>
+                    <th class="text-left">TED BcP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(match, c_key) in match.matching"
+                    :key="`match.combination-${c_key}`"
+                  >
+                    <td>
+                      {{
+                        match.combination[0].bitId + match.combination[1].bitId
+                      }}
+                    </td>
+                    <td>{{ match.combination[0].bitId }}</td>
+                    <td>{{ match.combination[0].name }}</td>
+                    <td>{{ match.combination[0].index }}</td>
+                    <td>{{ match.combination[1].index }}</td>
+                    <td>{{ match.combination[1].name }}</td>
+                    <td>{{ match.combination[1].bitId }}</td>
+                    <td>{{ match.diffsDiffs.diffsDiffs.length }}</td>
+                    <td>
+                      {{
+                        match.diffsDiffs.diffsWithbreadcrumbsPathsDiffs.length
+                      }}
+                    </td>
+                    <td>
+                      <v-btn
+                        @click="
+                          state.combKey = c_key
+                          state.matchKey = m_key
+                          state.dialogType = 'preview'
+                        "
+                        v-bind="attrs"
+                        v-on="on"
+                        small
+                        >Preview</v-btn
+                      >
+                      <v-btn
+                        @click="
+                          state.combKey = c_key
+                          state.matchKey = m_key
+                          state.dialogType = 'showTree'
+                        "
+                        v-bind="attrs"
+                        v-on="on"
+                        small
+                        >Show Tree</v-btn
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </template>
+            </v-simple-table>
+          </div>
         </div>
       </template>
       <v-card>
-        <div class="pa-4">
+        <div class="pa-4" v-if="state.dialogType === 'preview'">
           <div>
             <v-btn icon @click="state.indexNumber++"
               ><v-icon> mdi-plus </v-icon></v-btn
@@ -88,6 +111,18 @@
             <div v-html="eventFiringElements[1]"></div>
           </div>
         </div>
+        <div class="pa-4" v-if="state.dialogType === 'showTree'">
+          <dif>
+            <div
+              class="my-2"
+              v-for="(diff, dd_key) in state.diffsDiffsArr[state.combKey]
+                .diffsDiffs"
+              :key="`diffsDiffs-${dd_key}`"
+            >
+              {{ diff }}
+            </div>
+          </dif>
+        </div>
         <v-card-actions>
           <v-btn @click="state.dialog = false">close</v-btn>
         </v-card-actions>
@@ -100,46 +135,24 @@ import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
 import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
-import { DataHistory, HistoriesByFile, HistoryAndFileName } from '~/utils/createDiffs/breadcrumbs'
-import { Diffs } from '~/utils/recording/diffTypes'
+import {
+  DataHistory,
+  HistoriesByFile,
+  HistoryAndFileName,
+} from '~/utils/createDiffs/breadcrumbs'
 import { getEventFiringElement } from '~/utils/getNewRootPathElements'
 import {
+  generateDiffsDiffsArr,
   getAllEventHistories,
   getCombinationListByFile,
   getTextHtml,
 } from '~/utils/checkDiffs/checkDiffsUtils'
-
-type EventHistory = {
-  name: string
-  index: number
-  history: DataHistory
-}
-
-type EventHistoryWithBitId = EventHistory & {
-  bitId: number
-}
-
-type DiffsDiffs = {
-  diffsDiffs: Diffs
-  diffsWithbreadcrumbsPathsDiffs: Diffs
-}
-
-type combinationWithDiffsDiff = {
-  combination: EventHistoryWithBitId[]
-  diffsDiffs: DiffsDiffs
-}
-
-type combinationWithDiffsDiffs = combinationWithDiffsDiff[]
-
-export type MatchingsByFile = {
-  fileNameX: string
-  fileNameY: string
-  matching: combinationWithDiffsDiffs
-}[]
+import { DiffsDiffs } from '~/utils/checkDiffs/checkDiffsType'
+import { combinationWithDiffsDiffs, EventHistory, MatchingsByFile } from '~/utils/guessCombination/type'
 
 type FileCombination = {
-  fileX: HistoryAndFileName,
-  fileY: HistoryAndFileName,
+  fileX: HistoryAndFileName
+  fileY: HistoryAndFileName
 }
 
 type State = {
@@ -150,6 +163,7 @@ type State = {
   combKey: number
   matchKey: number
   dialog: boolean
+  dialogType: 'preview' | 'showTree'
   indexNumber: number
   eventFiringElements: (string | null)[]
   matchingsByFile: MatchingsByFile
@@ -165,6 +179,7 @@ export default defineComponent({
       selectedFileB: '',
       diffsDiffsArr: [],
       dialog: false,
+      dialogType: 'preview',
       combKey: 0,
       matchKey: 0,
       indexNumber: 2,
@@ -177,10 +192,7 @@ export default defineComponent({
       state.file = file
     })
 
-    const calculateEditDistance = (
-      x: DataHistory,
-      y: DataHistory
-    ) => {
+    const calculateEditDistance = (x: DataHistory, y: DataHistory) => {
       const diffsDiffs = justDiff(x.diffs, y.diffs)
       const diffsWithbreadcrumbsPathsDiffs = justDiff(
         x.diffsWithbreadcrumbsPaths,
@@ -220,7 +232,9 @@ export default defineComponent({
     const eventFiringElements = computed(() => {
       const index = state.indexNumber * 2
       if (state.matchingsByFile.length === 0) return [null, null]
-      const [A, B] = state.matchingsByFile[state.matchKey].matching[state.combKey].combination
+      const [A, B] =
+        state.matchingsByFile[state.matchKey].matching[state.combKey]
+          .combination
       return generateEventFiringElements(A.history, B.history, index)
     })
 
@@ -232,14 +246,14 @@ export default defineComponent({
       const fileCombinations = getFileCombination(state.file)
       const matchingsByFile = [] as MatchingsByFile
       for (let i = 0; i < fileCombinations.length; i++) {
-        
-        const {fileX, fileY} = fileCombinations[i]
+        const { fileX, fileY } = fileCombinations[i]
         const fileXEventHistories = addBitId(getAllEventHistories([fileX]))
         const fileYEventHistories = addBitId(getAllEventHistories([fileY]))
         const historyCombinations = getCombinationListByFile(
           fileXEventHistories,
           fileYEventHistories
         )
+        state.diffsDiffsArr = generateDiffsDiffsArr(historyCombinations)
         const combinationWithDiffsDiffs: combinationWithDiffsDiffs =
           historyCombinations.map((combination) => {
             const [X, Y] = combination
@@ -291,31 +305,38 @@ export default defineComponent({
         const comb = sortedcombinationWithDiffsDiffs[i]
         const [combX, combY] = comb.combination
 
-        const isAEventIdExist = XeventIdArr.some((id: string)=> {
-          return id === combX.history.eventInfo.eventId 
+        const isAEventIdExist = XeventIdArr.some((id: string) => {
+          return id === combX.history.eventInfo.eventId
         })
-        const isBEventIdExist = YeventIdArr.some((id: string)=> {
-          return id === combY.history.eventInfo.eventId 
+        const isBEventIdExist = YeventIdArr.some((id: string) => {
+          return id === combY.history.eventInfo.eventId
         })
 
-        const isAIndexExist = XIndexArr.some((index: number)=> {
+        const isAIndexExist = XIndexArr.some((index: number) => {
           return index === combX.index
         })
-        const isBIndexExist = YIndexArr.some((index: number)=> {
+        const isBIndexExist = YIndexArr.some((index: number) => {
           return index === combY.index
         })
 
-        const isSameEventType = combX.history.eventInfo.type === combY.history.eventInfo.type
+        const isSameEventType =
+          combX.history.eventInfo.type === combY.history.eventInfo.type
 
-        if (!isAIndexExist && !isBIndexExist && !isAEventIdExist && !isBEventIdExist && isSameEventType) {
+        if (
+          !isAIndexExist &&
+          !isBIndexExist &&
+          !isAEventIdExist &&
+          !isBEventIdExist &&
+          isSameEventType
+        ) {
           matchingArr.push(comb)
-          
+
           const isSameTedToPrev = prevTED === comb.diffsDiffs.diffsDiffs.length
           prevTED = comb.diffsDiffs.diffsDiffs.length
-          
+
           if (!isSameTedToPrev) {
-            XeventIdArr.push( combX.history.eventInfo.eventId )
-            YeventIdArr.push( combY.history.eventInfo.eventId )
+            XeventIdArr.push(combX.history.eventInfo.eventId)
+            YeventIdArr.push(combY.history.eventInfo.eventId)
             XIndexArr.push(combX.index)
             YIndexArr.push(combY.index)
           }
@@ -338,7 +359,10 @@ export default defineComponent({
         for (let j = 0; j < i; j++) {
           if (files[i].name === files[j].name) continue
           const sortedFiles = sortFilesByName([files[i], files[j]])
-          const fileCombination = {fileX: sortedFiles[0], fileY: sortedFiles[1]}
+          const fileCombination = {
+            fileX: sortedFiles[0],
+            fileY: sortedFiles[1],
+          }
           fileCombinations.push(fileCombination)
         }
       }

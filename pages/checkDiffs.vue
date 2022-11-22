@@ -38,6 +38,7 @@
                 <th class="text-left">bitId [B]</th>
                 <th class="text-left">TED</th>
                 <th class="text-left">TED BcP</th>
+                <th class="text-left">Button</th>
               </tr>
             </thead>
             <tbody>
@@ -61,11 +62,24 @@
                 </td>
                 <td>
                   <v-btn
-                    @click="state.key = c_key"
+                    @click="
+                      state.key = c_key
+                      state.dialogType = 'preview'
+                    "
                     v-bind="attrs"
                     v-on="on"
                     small
                     >Preview</v-btn
+                  >
+                  <v-btn
+                    @click="
+                      state.key = c_key
+                      state.dialogType = 'showTree'
+                    "
+                    v-bind="attrs"
+                    v-on="on"
+                    small
+                    >Show Tree</v-btn
                   >
                 </td>
               </tr>
@@ -74,7 +88,7 @@
         </v-simple-table>
       </template>
       <v-card>
-        <div class="pa-4">
+        <div class="pa-4" v-if="dialogType === 'preview'">
           <div>
             <v-btn icon @click="state.indexNumber++"
               ><v-icon> mdi-plus </v-icon></v-btn
@@ -90,6 +104,18 @@
           <div style="position: relative">
             <div v-html="eventFiringElements[1]"></div>
           </div>
+        </div>
+        <div class="pa-4" v-if="state.dialogType === 'showTree'">
+          <dif>
+            <div
+              class="my-2"
+              v-for="(diff, dd_key) in state.diffsDiffsArr[state.key]
+                .diffsDiffs"
+              :key="`diffsDiffs-${dd_key}`"
+            >
+              {{ diff }}
+            </div>
+          </dif>
         </div>
         <v-card-actions>
           <v-btn @click="state.dialog = false">close</v-btn>
@@ -124,6 +150,7 @@ type State = {
   diffsDiffsArr: DiffsDiffs[]
   key: number
   dialog: boolean
+  dialogType: 'preview' | 'showTree'
   indexNumber: number
   eventFiringElements: (string | null)[]
 }
@@ -139,6 +166,7 @@ export default defineComponent({
       combinationList: [],
       diffsDiffsArr: [],
       dialog: false,
+      dialogType: 'preview',
       key: 0,
       indexNumber: 2,
       eventFiringElements: [null, null],

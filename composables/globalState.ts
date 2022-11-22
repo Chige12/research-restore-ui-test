@@ -1,6 +1,7 @@
 import { readonly, ref } from 'vue'
-import { JsonFile } from '~/mixins/deepDiffType'
 import { HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
+import { MatchingsByFile } from '~/utils/guessCombination/type'
+import { JsonFile } from '~/utils/jsonFilesType'
 
 export const useJsonFiles = () => {
   const initialState = [] as JsonFile[]
