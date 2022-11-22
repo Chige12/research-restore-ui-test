@@ -102,7 +102,6 @@ import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import { DataHistory, HistoriesByFile, HistoryAndFileName } from '~/utils/createDiffs/breadcrumbs'
 import { Diffs } from '~/utils/recording/diffTypes'
-import { toDom } from 'hast-util-to-dom'
 import { getEventFiringElement } from '~/utils/getNewRootPathElements'
 import {
   getAllEventHistories,
