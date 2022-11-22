@@ -2,10 +2,7 @@
   <v-container>
     <v-row justify="center" align="center">
       <v-col cols="12" sm="12" md="12">
-        <Space
-          direction="vertical"
-          size="large"
-          type="flex"
+        <div
           id="check-component"
         >
           <Input
@@ -42,7 +39,7 @@
               </ButtonGroup>
             </Col>
           </Row>
-        </Space>
+        </div>
       </v-col>
     </v-row>
   </v-container>
@@ -69,8 +66,8 @@ type Data = {
   endItemNumber: number
 }
 
-const isMatch = (text: string, keyword: string) => {
-  return !text.trim().toLowerCase().indexOf(keyword.trim().toLowerCase())
+const isMatch = (text: string, keyword: string): boolean => {
+  return text.trim().toLowerCase().indexOf(keyword.trim().toLowerCase()) !== -1
 }
 
 export default defineComponent({
