@@ -1,4 +1,4 @@
-import { fromDom } from 'hast-util-from-dom'
+import { HastNode } from 'hast-util-from-dom/lib'
 import { diff as justDiff } from 'just-diff'
 import {
   defineComponent,
@@ -7,6 +7,7 @@ import {
   onUnmounted,
   reactive,
 } from 'vue'
+import { JsonFile } from '~/utils/jsonFilesType'
 import {
   addStylesFromDiffAndInfos,
   createDiffAndInfos,
@@ -21,7 +22,7 @@ import { setIdToAllElements } from '~/utils/recording/elements'
 import { EVENT, EventInfo, EVENT_TYPES } from '~/utils/recording/eventTypes'
 import { getAllElementStylesAndId } from '~/utils/recording/styles'
 import { saveJsonFile } from '~/utils/saveJsonFile'
-import { Data, JsonFile } from './deepDiffType'
+import { Data } from './deepDiffType'
 
 const ROOT_ELEMENT_ID = 'check-component'
 
@@ -51,17 +52,7 @@ export default defineComponent({
       setIdToAllElements(state.pathName, rootElement)
       state.allElementStylesPerDiff.push(getAllElementStylesAndId(rootElement))
       createHastHistory(EVENT.First)
-
-      window.addEventListener(
-        'click',
-        (e) => createHastHistory(EVENT.CLICK, e),
-        false
-      )
-      window.addEventListener(
-        'keydown',
-        (e) => createHastHistory(EVENT.KEY, e),
-        false
-      )
+      addEventListener()
     })
 
     onBeforeUnmount(() => {
@@ -69,17 +60,30 @@ export default defineComponent({
     })
 
     onUnmounted(() => {
-      window.removeEventListener(
-        'click',
-        (e) => createHastHistory(EVENT.CLICK, e),
-        false
-      )
-      window.removeEventListener(
-        'keydown',
-        (e) => createHastHistory(EVENT.KEY, e),
-        false
-      )
+      removeEventListener()
     })
+
+    const addEventListener = () => {
+      window.addEventListener('click', click, false)
+      window.addEventListener('keydown', keydown, false)
+    }
+
+    const removeEventListener = () => {
+      window.removeEventListener('click', click, false)
+      window.removeEventListener('keydown', keydown, false)
+    }
+
+    const click = (e: Event) => {
+      createHastHistory(EVENT.CLICK, e)
+    }
+    const keydown = (e: Event) => {
+      createHastHistory(EVENT.KEY, e)
+    }
+
+    const fromDom = async (element: Element): Promise<HastNode> => {
+      const module = await import('hast-util-from-dom')
+      return module.fromDom(element)
+    }
 
     const createHastHistory = async (type: EVENT_TYPES, event?: Event) => {
       const { hastHistories, allElementStylesPerDiff } = state
@@ -94,20 +98,22 @@ export default defineComponent({
       const pathName = location.pathname.replaceAll('/', '-')
       setIdToAllElements(pathName, rootElement)
 
-      const eventInfo = getEventInfo(event)
-      const hast = fromDom(rootElement)
+      const eventInfo = await getEventInfo(event)
+      const hast = await fromDom(rootElement)
       const hastHistory: HastHistory = { type, hast, eventInfo }
       hastHistories.push(hastHistory)
       createAndSaveDiff()
       allElementStylesPerDiff.push(getAllElementStylesAndId(rootElement))
     }
 
-    const getEventInfo = (event?: Event): EventInfo | undefined => {
+    const getEventInfo = async (
+      event?: Event
+    ): Promise<EventInfo | undefined> => {
       const target = event ? event.target : null
       const isTarget = target instanceof HTMLElement
       if (event && target && isTarget) {
         const element = target as HTMLElement
-        const eventHast = fromDom(element)
+        const eventHast = await fromDom(element)
         const eventId = element.id
         return {
           event,
