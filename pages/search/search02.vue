@@ -17,14 +17,11 @@
               <div class="pr-4 text-right">Rows per page:</div>
             </Col>
             <Col span="2">
-              <Select v-model="rowsPerPage" class="select-rows-per-page">
-                <Option
-                  v-for="item in rowsPerPageList"
-                  :value="item.value"
-                  :key="item.value"
-                  >{{ item.label }}</Option
-                >
-              </Select>
+              <v-select
+                :items="rowsPerPageList"
+                v-model="rowsPerPage"
+                dense
+              ></v-select>
             </Col>
             <Col span="3">
               <div class="pr-4 text-right">
@@ -59,7 +56,7 @@ type Data = {
   }[]
   searchedDesserts: Dessert[]
   desserts: Dessert[]
-  rowsPerPageList: { value: RowsPerPage; label: string }[]
+  rowsPerPageList: RowsPerPage[]
   rowsPerPage: RowsPerPage
   page: number
   firstItemNumber: number
@@ -90,10 +87,10 @@ export default defineComponent({
       searchedDesserts: desserts,
       desserts: desserts,
       rowsPerPageList: [
-        { value: 5, label: '5' },
-        { value: 10, label: '10' },
-        { value: 15, label: '15' },
-        { value: 'All', label: 'All' },
+        5,
+        10,
+        15,
+        'All',
       ],
       rowsPerPage: 10,
       page: 1,
