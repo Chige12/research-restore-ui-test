@@ -48,7 +48,7 @@
               >
                 <td>
                   {{
-                    combi[0].bitId && combi[1].bitId
+                    combi[0].bitId !== undefined && combi[1].bitId !== undefined
                       ? combi[0].bitId + combi[1].bitId
                       : ''
                   }}
@@ -108,8 +108,7 @@
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
           <div
             class="my-2"
-            v-for="(diff, dd_key) in state.diffsDiffsArr[state.key]
-              .diffsDiffs"
+            v-for="(diff, dd_key) in state.diffsDiffsArr[state.key].diffsDiffs"
             :key="`diffsDiffs-${dd_key}`"
           >
             {{ diff }}
@@ -127,10 +126,7 @@ import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import { DiffsDiffs } from '~/types/diffsDiffs'
-import {
-  HistoriesByFile,
-  HistoryAndFileData,
-} from '~/types/history'
+import { HistoriesByFile, HistoryAndFileData } from '~/types/history'
 import { CombinationList } from '~/utils/checkDiffs/checkDiffsType'
 import {
   generateDiffsDiffsArr,

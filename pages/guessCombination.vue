@@ -47,7 +47,8 @@
                   >
                     <td>
                       {{
-                        match.combination[0].bitId && match.combination[1].bitId
+                        match.combination[0].bitId !== undefined &&
+                        match.combination[1].bitId !== undefined
                           ? match.combination[0].bitId +
                             match.combination[1].bitId
                           : ''
