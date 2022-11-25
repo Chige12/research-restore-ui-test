@@ -23,6 +23,8 @@ import { Data } from './deepDiffType'
 
 const ROOT_ELEMENT_ID = 'check-component'
 
+const IS_SAVE_DIFF = false
+
 const delay = (n: number) => new Promise((r) => setTimeout(r, n * 1000))
 
 export default defineComponent({
@@ -101,6 +103,7 @@ export default defineComponent({
       const hast = await fromDom(rootElement)
       const hastHistory: HastHistory = { type, hast, eventInfo }
       hastHistories.push(hastHistory)
+
       createAndSaveDiff()
       allElementStylesPerDiff.push(getAllElementStylesAndId(rootElement))
     }
@@ -129,32 +132,23 @@ export default defineComponent({
       const fromHistory = hasts[hasts.length - 2] as HastHistory
       const toHistory = hasts[hasts.length - 1] as HastHistory
 
-      const canCreateDiff =
-        fromHistory && 'hast' in fromHistory && toHistory && 'hast' in toHistory
-
-      if (canCreateDiff) {
-        const fromAndToHastHistory = createFromAndToHastHistory(
-          fromHistory,
-          toHistory
-        )
-        fromAndToHastHistories.push(fromAndToHastHistory)
-        console.log('SAVE DONE!')
-        return
-      }
-
-      fromAndToHastHistories.push({
-        from: fromHistory,
-        to: toHistory,
-        diffs: null,
-        diffAndInfos: null,
-      })
-      console.log('SAVE DONE! (can not create diff)')
+      const fromAndToHastHistory = createFromAndToHastHistory(
+        fromHistory,
+        toHistory
+      )
+      fromAndToHastHistories.push(fromAndToHastHistory)
+      console.log('SAVE DONE!')
     }
 
     const createFromAndToHastHistory = (
       from: HastHistory,
       to: HastHistory
     ): FromAndToHastHistory => {
+      const canCreateDiff = from && 'hast' in from && to && 'hast' in to
+      if (!canCreateDiff || !IS_SAVE_DIFF) {
+        return { from, to }
+      }
+
       const diffs = justDiff(from.hast, to.hast)
       const diffAndInfos = createDiffAndInfos(diffs, from.hast, to.hast)
       // CSSのclass配列のdiffを順不同で検証したいので、同じidのDOMが存在する場合マージする

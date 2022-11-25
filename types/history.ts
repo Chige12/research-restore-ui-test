@@ -13,8 +13,8 @@ export type HastHistory = {
 export type FromAndToHastHistory = {
   from: HastHistory
   to: HastHistory
-  diffs: Diffs | null
-  diffAndInfos?: DiffAndInfos | null
+  diffs?: Diffs
+  diffAndInfos?: DiffAndInfos
 }
 
 export type EventHistory = {
