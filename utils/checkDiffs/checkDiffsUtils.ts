@@ -1,22 +1,24 @@
 import { toDom } from 'hast-util-to-dom'
 import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
-import { DataHistory, HistoriesByFile } from '../createDiffs/breadcrumbs'
+import {
+  EventHistory,
+  HistoriesByFile,
+  HistoryAndFileData,
+} from '~/types/history'
 import { getEventFiringElement } from '../getNewRootPathElements'
 import { Diffs } from '../recording/diffTypes'
-import {
-  CombinationList,
-  EventHistory,
-  EventHistoryWithBitId,
-} from './checkDiffsType'
+import { CombinationList } from './checkDiffsType'
 
-export const getAllEventHistories = (file: HistoriesByFile): EventHistory[] => {
-  let allEventHistories = [] as EventHistory[]
+export const getAllEventHistories = (
+  file: HistoriesByFile
+): HistoryAndFileData[] => {
+  let allEventHistories = [] as HistoryAndFileData[]
   for (let i = 0; i < file.length; i++) {
     for (let h = 0; h < file[i].histories.length; h++) {
       const history = file[i].histories[h]
-      const oneEventHistory: EventHistory = {
-        name: file[i].name,
+      const oneEventHistory: HistoryAndFileData = {
+        fileName: file[i].fileName,
         index: h,
         history,
       }
@@ -27,12 +29,12 @@ export const getAllEventHistories = (file: HistoriesByFile): EventHistory[] => {
 }
 
 export const getCombinationList = (
-  list: EventHistoryWithBitId[]
+  list: HistoryAndFileData[]
 ): CombinationList => {
   let combinationList = [] as CombinationList
   for (let i = 0; i < list.length; i++) {
     for (let j = 0; j < i; j++) {
-      if (list[i].name === list[j].name) continue
+      if (list[i].fileName === list[j].fileName) continue
       combinationList.push([list[i], list[j]])
     }
   }
@@ -40,8 +42,8 @@ export const getCombinationList = (
 }
 
 export const getCombinationListByFile = (
-  listX: EventHistoryWithBitId[],
-  listY: EventHistoryWithBitId[]
+  listX: HistoryAndFileData[],
+  listY: HistoryAndFileData[]
 ): CombinationList => {
   let combinationList = [] as CombinationList
   for (let a = 0; a < listX.length; a++) {
@@ -53,8 +55,8 @@ export const getCombinationListByFile = (
 }
 
 export const calculateEditDistance = (
-  A: EventHistoryWithBitId,
-  B: EventHistoryWithBitId
+  A: HistoryAndFileData,
+  B: HistoryAndFileData
 ) => {
   const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
   const diffsWithbreadcrumbsPathsDiffs = justDiff(
@@ -88,11 +90,18 @@ const calculateMatchDiffCounts = (diffs: Diffs) => {
   let perfectMatchCount = 0
   for (let i = 0; i < diffs.length; i++) {
     const diff = diffs[i]
-    if (diff.value === null) continue
-    if (diff.value.hasOwnProperty('op')) {
-      perfectMatchCount++
-    } else {
+    if (
+      diff.value === null ||
+      diff.value === undefined ||
+      typeof diff.value !== 'object'
+    ) {
       partialMatchCount++
+    } else {
+      if ('op' in diff.value) {
+        perfectMatchCount++
+      } else {
+        partialMatchCount++
+      }
     }
   }
   return { perfectMatchCount, partialMatchCount }
@@ -116,8 +125,8 @@ export const generateDiffsDiffsArr = (combinationList: CombinationList) => {
 }
 
 export const generateEventFiringElements = (
-  A: DataHistory,
-  B: DataHistory,
+  A: EventHistory,
+  B: EventHistory,
   index: number
 ): (string | null)[] => {
   const AEventFiringElement = getEventFiringElement(

@@ -9,7 +9,7 @@
           <v-row align="center">
             <v-col cols="6">
               <v-select
-                :items="[''].concat(state.file.map((x) => x.name))"
+                :items="[''].concat(state.file.map((x) => x.fileName))"
                 v-model="state.selectedFileA"
                 label="[ A ]"
                 outlined
@@ -17,7 +17,7 @@
             </v-col>
             <v-col cols="6">
               <v-select
-                :items="[''].concat(state.file.map((x) => x.name))"
+                :items="[''].concat(state.file.map((x) => x.fileName))"
                 v-model="state.selectedFileB"
                 label="[ B ]"
                 outlined
@@ -43,16 +43,22 @@
             </thead>
             <tbody>
               <tr
-                v-for="(combination, c_key) in state.combinationList"
-                :key="`combination-${c_key}`"
+                v-for="(combi, c_key) in state.combinationList"
+                :key="`combi-${c_key}`"
               >
-                <td>{{ combination[0].bitId + combination[1].bitId }}</td>
-                <td>{{ combination[0].bitId }}</td>
-                <td>{{ combination[0].name }}</td>
-                <td>{{ combination[0].index }}</td>
-                <td>{{ combination[1].index }}</td>
-                <td>{{ combination[1].name }}</td>
-                <td>{{ combination[1].bitId }}</td>
+                <td>
+                  {{
+                    combi[0].bitId && combi[1].bitId
+                      ? combi[0].bitId + combi[1].bitId
+                      : ''
+                  }}
+                </td>
+                <td>{{ combi[0].bitId }}</td>
+                <td>{{ combi[0].fileName }}</td>
+                <td>{{ combi[0].index }}</td>
+                <td>{{ combi[1].index }}</td>
+                <td>{{ combi[1].fileName }}</td>
+                <td>{{ combi[1].bitId }}</td>
                 <td>{{ state.diffsDiffsArr[c_key].diffsDiffs.length }}</td>
                 <td>
                   <v-btn
@@ -82,7 +88,7 @@
         </v-simple-table>
       </template>
       <v-card>
-        <div class="pa-4" v-if="dialogType === 'preview'">
+        <div class="pa-4" v-if="state.dialogType === 'preview'">
           <div>
             <v-btn icon @click="state.indexNumber++"
               ><v-icon> mdi-plus </v-icon></v-btn
@@ -100,16 +106,14 @@
           </div>
         </div>
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
-          <dif>
-            <div
-              class="my-2"
-              v-for="(diff, dd_key) in state.diffsDiffsArr[state.key]
-                .diffsDiffs"
-              :key="`diffsDiffs-${dd_key}`"
-            >
-              {{ diff }}
-            </div>
-          </dif>
+          <div
+            class="my-2"
+            v-for="(diff, dd_key) in state.diffsDiffsArr[state.key]
+              .diffsDiffs"
+            :key="`diffsDiffs-${dd_key}`"
+          >
+            {{ diff }}
+          </div>
         </div>
         <v-card-actions>
           <v-btn @click="state.dialog = false">close</v-btn>
@@ -122,12 +126,11 @@
 import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
-import { HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
 import {
-  CombinationList,
-  DiffsDiffs,
-  EventHistory,
-} from '~/utils/checkDiffs/checkDiffsType'
+  HistoriesByFile,
+  HistoryAndFileData,
+} from '~/types/history'
+import { CombinationList, DiffsDiffs } from '~/utils/checkDiffs/checkDiffsType'
 import {
   generateDiffsDiffsArr,
   getAllEventHistories,
@@ -192,7 +195,7 @@ export default defineComponent({
       return generateEventFiringElements(A.history, B.history, index)
     })
 
-    const addBitId = (x: EventHistory[]) =>
+    const addBitId = (x: HistoryAndFileData[]) =>
       x.map((x, i) => ({ ...x, bitId: i }))
 
     watchEffect(() => {
@@ -200,8 +203,12 @@ export default defineComponent({
       const fileNameB = state.selectedFileB
       if (fileNameA === '' || fileNameB === '') return
 
-      const fileA = state.file.filter((x) => x.name === fileNameA)
-      const fileB = state.file.filter((x) => x.name === fileNameB)
+      const fileA: HistoriesByFile = state.file.filter(
+        (x) => x.fileName === fileNameA
+      )
+      const fileB: HistoriesByFile = state.file.filter(
+        (x) => x.fileName === fileNameB
+      )
 
       console.log(state.file, fileA, fileB)
 

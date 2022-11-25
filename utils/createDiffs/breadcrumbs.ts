@@ -1,23 +1,9 @@
-import { HastElement, HastNode } from 'hast-util-from-dom/lib'
+import { HastElement } from 'hast-util-from-dom/lib'
 import get from 'lodash/get'
 import { hasProperty } from '../check'
 import { newRootElement } from '../getNewRootPathElements'
 import { Diff, Diffs, Path } from '../recording/diffTypes'
-import { EventInfo } from '../recording/eventTypes'
 import { CSSStyle } from '../recording/styles'
-
-export type DataHistory = {
-  oldFormat: { to: HastNode }
-  eventInfo: EventInfo
-  to: newRootElement
-  from: newRootElement
-  diffs: Diffs
-  diffsWithbreadcrumbsPaths: DiffWithBreadcrumbsPath
-}
-
-export type HistoryAndFileName = { name: string; histories: DataHistory[] }
-
-export type HistoriesByFile = HistoryAndFileName[]
 
 export type PropertiesExcludingSome = {
   type?: string

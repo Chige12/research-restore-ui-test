@@ -1,17 +1,7 @@
-import { DataHistory } from '../createDiffs/breadcrumbs'
+import { HistoryAndFileData } from '~/types/history'
 import { Diffs } from '../recording/diffTypes'
 
-export type EventHistory = {
-  name: string
-  index: number
-  history: DataHistory
-}
-
-export type EventHistoryWithBitId = EventHistory & {
-  bitId: number
-}
-
-export type CombinationList = EventHistoryWithBitId[][]
+export type CombinationList = HistoryAndFileData[][]
 
 export type DiffsDiffs = {
   diffsDiffs: Diffs

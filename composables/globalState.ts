@@ -1,5 +1,5 @@
 import { readonly, ref } from 'vue'
-import { HistoriesByFile } from '~/utils/createDiffs/breadcrumbs'
+import { HistoriesByFile } from '~/types/history'
 import { MatchingsByFile } from '~/utils/guessCombination/type'
 import { JsonFile } from '~/utils/jsonFilesType'
 

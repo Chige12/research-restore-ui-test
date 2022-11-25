@@ -2,8 +2,8 @@
   <div v-if="state.isExistJsonFile">
     <v-btn @click="updateHistoriesByFile"> update! </v-btn>
     <v-btn @click="createJsonFile">create Json File!</v-btn>
-    <div class="mx-6" v-for="file in storeHistoriesByFile" :key="file.name">
-      <h3>file {{ file.name }}</h3>
+    <div class="mx-6" v-for="file in storeHistoriesByFile" :key="file.fileName">
+      <h3>file {{ file.fileName }}</h3>
       <div v-for="(history, key) in file.histories" :key="`histories-${key}`">
         <p>{{ key }}</p>
         <v-simple-table>
@@ -57,8 +57,8 @@ import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
 import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
 import {
   createDiffsWithBreadcrumbsPath,
-  DataHistory,
 } from '~/utils/createDiffs/breadcrumbs'
+import { EventHistory, HistoriesAndFileData, HistoriesByFile } from '~/types/history'
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
@@ -111,17 +111,18 @@ export default defineComponent({
       )
     }
 
-    const createHistoriesByFile = (jsonFiles: JsonFiles) => {
-      return jsonFiles.map((file) => {
+    const createHistoriesByFile = (jsonFiles: JsonFiles): HistoriesByFile => {
+      return jsonFiles.map((file, index) => {
         const { diffHistories } = file.data
         const histories = createHistories(diffHistories)
-        return { name: file.name, histories }
+        const historiesANdFileData: HistoriesAndFileData = { fileName: file.name, index, histories }
+        return historiesANdFileData
       })
     }
 
     const createHistories = (
       diffHistories: Array<DiffHistory>
-    ): DataHistory[] => {
+    ): EventHistory[] => {
       let histories = []
       for (let i = 0; i < diffHistories.length; i++) {
         const { to, from } = diffHistories[i]
@@ -143,7 +144,7 @@ export default defineComponent({
       toHast: HastNode,
       fromHast: HastNode,
       eventInfo: EventInfo
-    ): DataHistory => {
+    ): EventHistory => {
       const toNewRootHast = getNewRootPathElements(toHast, eventInfo.eventId)
       const fromNewRootHast = getNewRootPathElements(fromHast, eventInfo.eventId)
       const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
@@ -164,7 +165,7 @@ export default defineComponent({
 
     const createJsonFile = () => {
       storeHistoriesByFile.value.forEach((file) => {
-        const name = `histories_${file.name}`
+        const name = `histories_${file.fileName}`
         saveJsonFile(file.histories, name)
       })
     }
