@@ -126,11 +126,12 @@
 import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
+import { DiffsDiffs } from '~/types/diffsDiffs'
 import {
   HistoriesByFile,
   HistoryAndFileData,
 } from '~/types/history'
-import { CombinationList, DiffsDiffs } from '~/utils/checkDiffs/checkDiffsType'
+import { CombinationList } from '~/utils/checkDiffs/checkDiffsType'
 import {
   generateDiffsDiffsArr,
   getAllEventHistories,

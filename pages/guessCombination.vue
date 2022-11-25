@@ -149,7 +149,7 @@ import {
   getCombinationListByFile,
   getTextHtml,
 } from '~/utils/checkDiffs/checkDiffsUtils'
-import { DiffsDiffs } from '~/utils/checkDiffs/checkDiffsType'
+import { DiffsDiffs } from '~/types/diffsDiffs'
 import {
   combinationWithDiffsDiffs,
   MatchingsByFile,
