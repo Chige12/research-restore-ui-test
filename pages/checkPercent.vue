@@ -53,7 +53,7 @@ import {
   getCountedProperties,
   CountedProperties,
 } from '~/utils/checkPercent/cssPropeties'
-import { DiffHistory } from '~/utils/recording/diffTypes'
+import { DiffHistory } from '~/types/history'
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 
 type Data = {

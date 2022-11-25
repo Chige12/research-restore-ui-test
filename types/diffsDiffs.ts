@@ -1,4 +1,4 @@
-import { Diffs } from '~/utils/recording/diffTypes'
+import { Diffs } from '~/types/diffs'
 
 export type DiffsDiffs = {
   diffsDiffs: Diffs

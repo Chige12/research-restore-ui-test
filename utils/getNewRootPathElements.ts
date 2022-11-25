@@ -1,8 +1,8 @@
 import { HastNode } from 'hast-util-from-dom/lib'
 import cloneDeep from 'lodash/cloneDeep'
 import get from 'lodash/get'
+import { Path } from '../types/diffs'
 import { hasProperty } from './check'
-import { Path } from './recording/diffTypes'
 
 export type newRootElement = HastNode & {
   brothers?: newRootElement

@@ -8,7 +8,7 @@ import {
   ElementDiff,
   ElementDiffs,
   JustDiff,
-} from './diffTypes'
+} from '../../types/diffs'
 import { getStyles } from './styles'
 
 export const createDiffAndInfos = (

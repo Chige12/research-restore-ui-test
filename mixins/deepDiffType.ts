@@ -1,15 +1,14 @@
 import { HastNode } from 'hast-util-from-dom/lib'
-import { EventInfo, EVENT_TYPES } from '~/types/event'
 import {
   Diff,
   DiffAndInfos,
-  DiffHistory,
   DiffType,
   ElementDiff,
   ElementDiffs,
-  HastHistory,
   JustDiff,
-} from '~/utils/recording/diffTypes'
+} from '~/types/diffs'
+import { EventInfo, EVENT_TYPES } from '~/types/event'
+import { DiffHistory, HastHistory } from '~/types/history'
 import {
   CSSStyle,
   StylesAndId,

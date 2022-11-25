@@ -1,8 +1,21 @@
 import { HastNode } from 'hast-util-from-dom/lib'
-import { EventInfo } from '~/types/event'
+import { DiffAndInfos, Diffs } from '~/types/diffs'
+import { EventInfo, EVENT_TYPES } from '~/types/event'
 import { DiffWithBreadcrumbsPath } from '~/utils/createDiffs/breadcrumbs'
 import { newRootElement } from '~/utils/getNewRootPathElements'
-import { Diffs } from '~/utils/recording/diffTypes'
+
+export type HastHistory = {
+  type: EVENT_TYPES
+  hast: HastNode
+  eventInfo?: EventInfo | undefined
+}
+
+export type DiffHistory = {
+  from: HastHistory
+  to: HastHistory
+  diffs: Diffs | null
+  diffAndInfos?: DiffAndInfos | null
+}
 
 export type EventHistory = {
   oldFormat: { to: HastNode }

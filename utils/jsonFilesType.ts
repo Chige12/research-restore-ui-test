@@ -1,4 +1,4 @@
-import { DiffHistory } from './recording/diffTypes'
+import { DiffHistory } from '../types/history'
 import { StylesPerElements } from './recording/styles'
 
 export type JsonFile = {

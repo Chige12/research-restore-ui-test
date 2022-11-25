@@ -1,8 +1,8 @@
 import { HastElement } from 'hast-util-from-dom/lib'
 import get from 'lodash/get'
+import { Diff, Diffs, Path } from '../../types/diffs'
 import { hasProperty } from '../check'
 import { newRootElement } from '../getNewRootPathElements'
-import { Diff, Diffs, Path } from '../recording/diffTypes'
 import { CSSStyle } from '../recording/styles'
 
 export type PropertiesExcludingSome = {

@@ -7,8 +7,8 @@ import {
   HistoriesByFile,
   HistoryAndFileData,
 } from '~/types/history'
+import { Diffs } from '../../types/diffs'
 import { getEventFiringElement } from '../getNewRootPathElements'
-import { Diffs } from '../recording/diffTypes'
 
 export const getAllEventHistories = (
   file: HistoriesByFile

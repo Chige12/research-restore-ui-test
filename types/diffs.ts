@@ -1,12 +1,5 @@
 import { HastElement, HastNode, HastRoot } from 'hast-util-from-dom/lib'
-import { EventInfo, EVENT_TYPES } from '~/types/event'
-import { CSSStyle } from './styles'
-
-export type HastHistory = {
-  type: EVENT_TYPES
-  hast: HastNode
-  eventInfo?: EventInfo | undefined
-}
+import { CSSStyle } from '../utils/recording/styles'
 
 export type Operation = 'add' | 'replace' | 'remove'
 export type Path = Array<string | number>
@@ -52,10 +45,3 @@ export interface Info {
 
 export type Diffs = Array<Diff>
 export type DiffAndInfos = Array<Diff & Info>
-
-export type DiffHistory = {
-  from: HastHistory
-  to: HastHistory
-  diffs: Diffs | null
-  diffAndInfos?: DiffAndInfos | null
-}

@@ -54,11 +54,14 @@ import { HastNode } from 'hast-util-from-dom/lib'
 import { defineComponent, reactive } from 'vue'
 import { diff as justDiff } from 'just-diff'
 import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
-import { DiffHistory, Diffs } from '~/utils/recording/diffTypes'
+import { Diffs } from '~/types/diffs'
+import { createDiffsWithBreadcrumbsPath } from '~/utils/createDiffs/breadcrumbs'
 import {
-  createDiffsWithBreadcrumbsPath,
-} from '~/utils/createDiffs/breadcrumbs'
-import { EventHistory, HistoriesAndFileData, HistoriesByFile } from '~/types/history'
+  DiffHistory,
+  EventHistory,
+  HistoriesAndFileData,
+  HistoriesByFile,
+} from '~/types/history'
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
@@ -80,7 +83,7 @@ export default defineComponent({
     onMounted(() => {
       updateHistoriesByFile()
     })
-    
+
     const updateHistoriesByFile = async () => {
       const jsonFiles = await getJsonFiles()
       if (!jsonFiles) return
@@ -115,7 +118,11 @@ export default defineComponent({
       return jsonFiles.map((file, index) => {
         const { diffHistories } = file.data
         const histories = createHistories(diffHistories)
-        const historiesANdFileData: HistoriesAndFileData = { fileName: file.name, index, histories }
+        const historiesANdFileData: HistoriesAndFileData = {
+          fileName: file.name,
+          index,
+          histories,
+        }
         return historiesANdFileData
       })
     }
@@ -146,7 +153,10 @@ export default defineComponent({
       eventInfo: EventInfo
     ): EventHistory => {
       const toNewRootHast = getNewRootPathElements(toHast, eventInfo.eventId)
-      const fromNewRootHast = getNewRootPathElements(fromHast, eventInfo.eventId)
+      const fromNewRootHast = getNewRootPathElements(
+        fromHast,
+        eventInfo.eventId
+      )
       const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
       const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(
         diffs,
