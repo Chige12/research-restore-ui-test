@@ -48,7 +48,8 @@
               >
                 <td>
                   {{
-                    combi[0].bitId !== undefined && combi[1].bitId !== undefined
+                      combi[0].bitId !== undefined &&
+                      combi[1].bitId !== undefined
                       ? combi[0].bitId + combi[1].bitId
                       : ''
                   }}
