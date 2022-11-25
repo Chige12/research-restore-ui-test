@@ -37,8 +37,8 @@
                 <th class="text-left">name [B]</th>
                 <th class="text-left">bitId [B]</th>
                 <th class="text-left">TED</th>
-                <th class="text-left">TED BcP</th>
                 <th class="text-left">Button</th>
+                <!-- <th class="text-left" v-for="(indexName, inNa_Key) in state.diffsDiffsArr[0]" :key="`inNa-${inNa_Key}`">{{}}</th> -->
               </tr>
             </thead>
             <tbody>
@@ -54,12 +54,6 @@
                 <td>{{ combination[1].name }}</td>
                 <td>{{ combination[1].bitId }}</td>
                 <td>{{ state.diffsDiffsArr[c_key].diffsDiffs.length }}</td>
-                <td>
-                  {{
-                    state.diffsDiffsArr[c_key].diffsWithbreadcrumbsPathsDiffs
-                      .length
-                  }}
-                </td>
                 <td>
                   <v-btn
                     @click="

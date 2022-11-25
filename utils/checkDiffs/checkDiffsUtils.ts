@@ -60,10 +60,50 @@ export const calculateEditDistance = (
     A.history.diffsWithbreadcrumbsPaths,
     B.history.diffsWithbreadcrumbsPaths
   )
+  const matchDiffCounts = calculateMatchDiffCounts(diffsDiffs)
+  const partialMatchPercentage =
+    calculatePartialMatchPercentage(matchDiffCounts)
+  const performanceIndexNames: string[] = [
+    '差分の部分一致数',
+    '差分の完全一致数',
+    '部分一致割合',
+  ]
+  const performanceIndexes: number[] = [
+    matchDiffCounts.partialMatchCount,
+    matchDiffCounts.perfectMatchCount,
+    partialMatchPercentage,
+  ]
   return {
     diffsDiffs,
     diffsWithbreadcrumbsPathsDiffs,
+    performanceIndexNames,
+    performanceIndexes,
   }
+}
+
+// 評価指標の計算
+const calculateMatchDiffCounts = (diffs: Diffs) => {
+  let partialMatchCount = 0
+  let perfectMatchCount = 0
+  for (let i = 0; i < diffs.length; i++) {
+    const diff = diffs[i]
+    if (diff.value === null) continue
+    if (diff.value.hasOwnProperty('op')) {
+      perfectMatchCount++
+    } else {
+      partialMatchCount++
+    }
+  }
+  return { perfectMatchCount, partialMatchCount }
+}
+const calculatePartialMatchPercentage = (matchDiffCounts: {
+  perfectMatchCount: number
+  partialMatchCount: number
+}) => {
+  const allCount =
+    matchDiffCounts.perfectMatchCount + matchDiffCounts.partialMatchCount
+  if (allCount === 0) return 0
+  return matchDiffCounts.partialMatchCount / allCount
 }
 
 export const generateDiffsDiffsArr = (combinationList: CombinationList) => {
