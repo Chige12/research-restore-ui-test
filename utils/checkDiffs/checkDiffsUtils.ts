@@ -3,6 +3,7 @@ import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
 import { DataHistory, HistoriesByFile } from '../createDiffs/breadcrumbs'
 import { getEventFiringElement } from '../getNewRootPathElements'
+import { Diffs } from '../recording/diffTypes'
 import {
   CombinationList,
   EventHistory,
