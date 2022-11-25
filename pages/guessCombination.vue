@@ -131,6 +131,9 @@
       </v-card>
     </v-dialog>
   </div>
+  <div v-else>
+    <v-btn to="createDiffs">Go to createDiffs</v-btn>
+  </div>
 </template>
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep'
@@ -145,6 +148,7 @@ import {
 } from '~/types/history'
 import { getEventFiringElement } from '~/utils/getNewRootPathElements'
 import {
+  calculateEditDistance,
   generateDiffsDiffsArr,
   getAllEventHistories,
   getCombinationListByFile,
@@ -197,18 +201,6 @@ export default defineComponent({
       const file = cloneDeep(historiesByFile.value)
       state.file = file
     })
-
-    const calculateEditDistance = (x: EventHistory, y: EventHistory) => {
-      const diffsDiffs = justDiff(x.diffs, y.diffs)
-      const diffsWithbreadcrumbsPathsDiffs = justDiff(
-        x.diffsWithbreadcrumbsPaths,
-        y.diffsWithbreadcrumbsPaths
-      )
-      return {
-        diffsDiffs,
-        diffsWithbreadcrumbsPathsDiffs,
-      }
-    }
 
     const generateEventFiringElements = (
       A: EventHistory,

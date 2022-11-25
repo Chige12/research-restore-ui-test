@@ -1,5 +1,5 @@
 <template>
-  <div v-if="historiesByFile.length !== 0">
+  <div v-if="state.file.length !== 0">
     <v-dialog v-model="state.dialog" width="1000">
       <template v-slot:activator="{ on, attrs }">
         <div class="ma-4">
@@ -48,8 +48,7 @@
               >
                 <td>
                   {{
-                      combi[0].bitId !== undefined &&
-                      combi[1].bitId !== undefined
+                    combi[0].bitId !== undefined && combi[1].bitId !== undefined
                       ? combi[0].bitId + combi[1].bitId
                       : ''
                   }}
@@ -121,9 +120,12 @@
       </v-card>
     </v-dialog>
   </div>
+  <div v-else>
+    <v-btn to="createDiffs">Go to createDiffs</v-btn>
+  </div>
 </template>
 <script lang="ts">
-import cloneDeep from 'lodash/cloneDeep'
+import { cloneDeep } from 'lodash'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import { DiffsDiffs } from '~/types/diffsDiffs'

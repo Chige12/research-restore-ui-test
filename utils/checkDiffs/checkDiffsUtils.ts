@@ -2,6 +2,7 @@ import { toDom } from 'hast-util-to-dom'
 import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
 import { CombinationList } from '~/types/combination'
+import { DiffsDiffs } from '~/types/diffsDiffs'
 import {
   EventHistory,
   HistoriesByFile,
@@ -54,14 +55,11 @@ export const getCombinationListByFile = (
   return combinationList
 }
 
-export const calculateEditDistance = (
-  A: HistoryAndFileData,
-  B: HistoryAndFileData
-) => {
-  const diffsDiffs = justDiff(A.history.diffs, B.history.diffs)
+export const calculateEditDistance = (X: EventHistory, Y: EventHistory) => {
+  const diffsDiffs = justDiff(X.diffs, Y.diffs)
   const diffsWithbreadcrumbsPathsDiffs = justDiff(
-    A.history.diffsWithbreadcrumbsPaths,
-    B.history.diffsWithbreadcrumbsPaths
+    X.diffsWithbreadcrumbsPaths,
+    Y.diffsWithbreadcrumbsPaths
   )
   const matchDiffCounts = calculateMatchDiffCounts(diffsDiffs)
   const partialMatchPercentage =
@@ -76,12 +74,13 @@ export const calculateEditDistance = (
     matchDiffCounts.perfectMatchCount,
     partialMatchPercentage,
   ]
-  return {
+  const obj: DiffsDiffs = {
     diffsDiffs,
     diffsWithbreadcrumbsPathsDiffs,
     performanceIndexNames,
     performanceIndexes,
   }
+  return obj
 }
 
 // 評価指標の計算
@@ -118,8 +117,8 @@ const calculatePartialMatchPercentage = (matchDiffCounts: {
 
 export const generateDiffsDiffsArr = (combinationList: CombinationList) => {
   const diffsDiffsArr = combinationList.map((combination) => {
-    const [A, B] = combination
-    return calculateEditDistance(A, B)
+    const [X, Y] = combination
+    return calculateEditDistance(X.history, Y.history)
   })
   return diffsDiffsArr
 }
