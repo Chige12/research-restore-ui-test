@@ -1,5 +1,5 @@
 import { HastElement, HastNode, HastRoot } from 'hast-util-from-dom/lib'
-import { EventInfo, EVENT_TYPES } from './eventTypes'
+import { EventInfo, EVENT_TYPES } from '~/types/event'
 import { CSSStyle } from './styles'
 
 export type HastHistory = {

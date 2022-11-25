@@ -1,6 +1,7 @@
 import { toDom } from 'hast-util-to-dom'
 import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
+import { CombinationList } from '~/types/combination'
 import {
   EventHistory,
   HistoriesByFile,
@@ -8,7 +9,6 @@ import {
 } from '~/types/history'
 import { getEventFiringElement } from '../getNewRootPathElements'
 import { Diffs } from '../recording/diffTypes'
-import { CombinationList } from './checkDiffsType'
 
 export const getAllEventHistories = (
   file: HistoriesByFile

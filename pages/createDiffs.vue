@@ -62,7 +62,7 @@ import { EventHistory, HistoriesAndFileData, HistoriesByFile } from '~/types/his
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 import { saveJsonFile } from '~/utils/saveJsonFile'
 import { useHistoriesByFileStore } from '~/composables/globalState'
-import { EventInfo } from '~/utils/recording/eventTypes'
+import { EventInfo } from '~/types/event'
 
 type State = {
   isExistJsonFile: boolean

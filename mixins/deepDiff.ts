@@ -7,6 +7,7 @@ import {
   onUnmounted,
   reactive,
 } from 'vue'
+import { EVENT, EventInfo, EVENT_TYPES } from '~/types/event'
 import { JsonFile } from '~/utils/jsonFilesType'
 import {
   addStylesFromDiffAndInfos,
@@ -19,7 +20,6 @@ import {
   HastHistory,
 } from '~/utils/recording/diffTypes'
 import { setIdToAllElements } from '~/utils/recording/elements'
-import { EVENT, EventInfo, EVENT_TYPES } from '~/utils/recording/eventTypes'
 import { getAllElementStylesAndId } from '~/utils/recording/styles'
 import { saveJsonFile } from '~/utils/saveJsonFile'
 import { Data } from './deepDiffType'
