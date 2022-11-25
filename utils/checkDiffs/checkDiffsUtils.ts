@@ -13,7 +13,7 @@ import { getEventFiringElement } from '../getNewRootPathElements'
 export const getAllEventHistories = (
   file: HistoriesByFile
 ): HistoryAndFileData[] => {
-  let allEventHistories = [] as HistoryAndFileData[]
+  let allEventHistories: HistoryAndFileData[] = []
   for (let i = 0; i < file.length; i++) {
     for (let h = 0; h < file[i].histories.length; h++) {
       const history = file[i].histories[h]

@@ -10,7 +10,7 @@ export type HastHistory = {
   eventInfo?: EventInfo | undefined
 }
 
-export type DiffHistory = {
+export type FromAndToHastHistory = {
   from: HastHistory
   to: HastHistory
   diffs: Diffs | null

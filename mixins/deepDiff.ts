@@ -9,7 +9,7 @@ import {
 } from 'vue'
 import { DiffAndInfos } from '~/types/diffs'
 import { EVENT, EventInfo, EVENT_TYPES } from '~/types/event'
-import { DiffHistory, HastHistory } from '~/types/history'
+import { FromAndToHastHistory, HastHistory } from '~/types/history'
 import { JsonFile } from '~/utils/jsonFilesType'
 import {
   addStylesFromDiffAndInfos,
@@ -30,7 +30,7 @@ export default defineComponent({
     const state = reactive<Data>({
       rootElement: null,
       hastHistories: [],
-      diffHistories: [],
+      fromAndToHastHistories: [],
       pathName: '',
       mergeIdList: [],
       allElementStylesPerDiff: [],
@@ -125,7 +125,7 @@ export default defineComponent({
     }
 
     const createAndSaveDiff = () => {
-      const { hastHistories: hasts, diffHistories } = state
+      const { hastHistories: hasts, fromAndToHastHistories } = state
       const fromHistory = hasts[hasts.length - 2] as HastHistory
       const toHistory = hasts[hasts.length - 1] as HastHistory
 
@@ -133,13 +133,16 @@ export default defineComponent({
         fromHistory && 'hast' in fromHistory && toHistory && 'hast' in toHistory
 
       if (canCreateDiff) {
-        const diffHistory = createDiffHistory(fromHistory, toHistory)
-        diffHistories.push(diffHistory)
+        const fromAndToHastHistory = createFromAndToHastHistory(
+          fromHistory,
+          toHistory
+        )
+        fromAndToHastHistories.push(fromAndToHastHistory)
         console.log('SAVE DONE!')
         return
       }
 
-      diffHistories.push({
+      fromAndToHastHistories.push({
         from: fromHistory,
         to: toHistory,
         diffs: null,
@@ -148,10 +151,10 @@ export default defineComponent({
       console.log('SAVE DONE! (can not create diff)')
     }
 
-    const createDiffHistory = (
+    const createFromAndToHastHistory = (
       from: HastHistory,
       to: HastHistory
-    ): DiffHistory => {
+    ): FromAndToHastHistory => {
       const diffs = justDiff(from.hast, to.hast)
       const diffAndInfos = createDiffAndInfos(diffs, from.hast, to.hast)
       // CSSのclass配列のdiffを順不同で検証したいので、同じidのDOMが存在する場合マージする
@@ -186,10 +189,10 @@ export default defineComponent({
 
     const createJsonFile = (pathName: string) => {
       const obj: JsonFile = {
-        diffHistories: state.diffHistories,
+        fromAndToHastHistories: state.fromAndToHastHistories,
         allElementStylesPerDiff: state.allElementStylesPerDiff,
       }
-      const name = `diffHistories${pathName}`
+      const name = `Histories${pathName}`
       saveJsonFile(obj, name)
     }
   },

@@ -53,7 +53,7 @@ import {
   getCountedProperties,
   CountedProperties,
 } from '~/utils/checkPercent/cssPropeties'
-import { DiffHistory } from '~/types/history'
+import { FromAndToHastHistory } from '~/types/history'
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 
 type Data = {
@@ -132,18 +132,18 @@ export default defineComponent({
       })
     },
     openJsonCssPropeties(obj: JsonFile) {
-      const { allElementStylesPerDiff, diffHistories } = obj
+      const { allElementStylesPerDiff, fromAndToHastHistories } = obj
 
       this.allCssProperties = filteredCssProperties.length
 
       const styleDiffs = getStyleDiffs(allElementStylesPerDiff)
       this.countedProperties = getCountedProperties(styleDiffs)
 
-      this.openDiffHistories(diffHistories)
+      this.openFromAndToHastHistories(fromAndToHastHistories)
     },
-    openDiffHistories(diffHistories: Array<DiffHistory>) {
-      for (let i = 0; i < diffHistories.length; i++) {
-        const infos = diffHistories[i].diffAndInfos
+    openFromAndToHastHistories(fromAndToHastHistories: FromAndToHastHistory[]) {
+      for (let i = 0; i < fromAndToHastHistories.length; i++) {
+        const infos = fromAndToHastHistories[i].diffAndInfos
         if (!infos) continue
         const changes = countChanges(infos)
         this.changeStyleCount += changes.changeStyleCount

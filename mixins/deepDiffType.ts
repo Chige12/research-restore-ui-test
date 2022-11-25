@@ -8,7 +8,7 @@ import {
   JustDiff,
 } from '~/types/diffs'
 import { EventInfo, EVENT_TYPES } from '~/types/event'
-import { DiffHistory, HastHistory } from '~/types/history'
+import { FromAndToHastHistory, HastHistory } from '~/types/history'
 import {
   CSSStyle,
   StylesAndId,
@@ -21,8 +21,8 @@ export type StyleDiffs = {
 
 export type Data = {
   rootElement: HTMLElement | null
-  hastHistories: Array<HastHistory>
-  diffHistories: Array<DiffHistory>
+  hastHistories: HastHistory[]
+  fromAndToHastHistories: FromAndToHastHistory[]
   pathName: string
   mergeIdList: string[]
   allElementStylesPerDiff: StylesPerElements[]

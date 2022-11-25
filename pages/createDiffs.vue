@@ -57,7 +57,7 @@ import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
 import { Diffs } from '~/types/diffs'
 import { createDiffsWithBreadcrumbsPath } from '~/utils/createDiffs/breadcrumbs'
 import {
-  DiffHistory,
+  FromAndToHastHistory,
   EventHistory,
   HistoriesAndFileData,
   HistoriesByFile,
@@ -116,8 +116,8 @@ export default defineComponent({
 
     const createHistoriesByFile = (jsonFiles: JsonFiles): HistoriesByFile => {
       return jsonFiles.map((file, index) => {
-        const { diffHistories } = file.data
-        const histories = createHistories(diffHistories)
+        const { fromAndToHastHistories } = file.data
+        const histories = createHistories(fromAndToHastHistories)
         const historiesANdFileData: HistoriesAndFileData = {
           fileName: file.name,
           index,
@@ -128,11 +128,11 @@ export default defineComponent({
     }
 
     const createHistories = (
-      diffHistories: Array<DiffHistory>
+      fromAndToHastHistories: FromAndToHastHistory[]
     ): EventHistory[] => {
       let histories = []
-      for (let i = 0; i < diffHistories.length; i++) {
-        const { to, from } = diffHistories[i]
+      for (let i = 0; i < fromAndToHastHistories.length; i++) {
+        const { to, from } = fromAndToHastHistories[i]
         if (!to || !from) continue
 
         const { hast: toHast, eventInfo } = to

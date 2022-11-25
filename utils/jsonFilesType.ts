@@ -1,8 +1,8 @@
-import { DiffHistory } from '../types/history'
+import { FromAndToHastHistory } from '../types/history'
 import { StylesPerElements } from './recording/styles'
 
 export type JsonFile = {
-  diffHistories: Array<DiffHistory>
+  fromAndToHastHistories: FromAndToHastHistory[]
   allElementStylesPerDiff: StylesPerElements[]
 }
 
