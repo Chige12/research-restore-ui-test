@@ -37,7 +37,7 @@
                     <th class="text-left">name [Y]</th>
                     <th class="text-left">bitId [Y]</th>
                     <th class="text-left">TED</th>
-                    <th class="text-left">TED BcP</th>
+                    <th class="text-left">Button</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -61,11 +61,6 @@
                     <td>{{ match.combination[1].fileName }}</td>
                     <td>{{ match.combination[1].bitId }}</td>
                     <td>{{ match.diffsDiffs.diffsDiffs.length }}</td>
-                    <td>
-                      {{
-                        match.diffsDiffs.diffsWithbreadcrumbsPathsDiffs.length
-                      }}
-                    </td>
                     <td>
                       <v-btn
                         @click="
@@ -118,7 +113,7 @@
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
           <div
             class="my-2"
-            v-for="(diff, dd_key) in state.diffsDiffsArr[state.combKey]
+            v-for="(diff, dd_key) in state.matchingsByFile[state.matchKey].matching[state.combKey]
               .diffsDiffs"
             :key="`diffsDiffs-${dd_key}`"
           >
@@ -138,27 +133,25 @@
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
-import { diff as justDiff } from 'just-diff'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import {
-  EventHistory,
   HistoryAndFileData,
   HistoriesByFile,
   HistoriesAndFileData,
 } from '~/types/history'
-import { getEventFiringElement } from '~/utils/getNewRootPathElements'
 import {
-  calculateEditDistance,
-  generateDiffsDiffsArr,
   getAllEventHistories,
   getCombinationListByFile,
-  getTextHtml,
+  generateEventFiringElements,
+  calculateEditDistance,
 } from '~/utils/checkDiffs/checkDiffsUtils'
-import { DiffsDiffs } from '~/types/diffsDiffs'
 import {
   combinationWithDiffsDiffs,
   MatchingsByFile,
 } from '~/utils/guessCombination/type'
+import {
+  Matching
+} from '~/utils/guessCombination/matchingClass'
 
 type FileCombination = {
   fileX: HistoriesAndFileData
@@ -169,7 +162,6 @@ type State = {
   file: HistoriesByFile
   selectedFileA: string
   selectedFileB: string
-  diffsDiffsArr: DiffsDiffs[]
   combKey: number
   matchKey: number
   dialog: boolean
@@ -187,7 +179,6 @@ export default defineComponent({
       file: [],
       selectedFileA: '',
       selectedFileB: '',
-      diffsDiffsArr: [],
       dialog: false,
       dialogType: 'preview',
       combKey: 0,
@@ -201,31 +192,6 @@ export default defineComponent({
       const file = cloneDeep(historiesByFile.value)
       state.file = file
     })
-
-    const generateEventFiringElements = (
-      A: EventHistory,
-      B: EventHistory,
-      index: number
-    ): (string | null)[] => {
-      const AEventFiringElement = getEventFiringElement(
-        A.oldFormat.to,
-        A.eventInfo.eventId,
-        index
-      )
-      const BEventFiringElement = getEventFiringElement(
-        B.oldFormat.to,
-        B.eventInfo.eventId,
-        index
-      )
-      const AHtml = AEventFiringElement
-        ? (getTextHtml(AEventFiringElement) as string)
-        : null
-      const BHtml = BEventFiringElement
-        ? (getTextHtml(BEventFiringElement) as string)
-        : null
-      console.log(AHtml, BHtml)
-      return [AHtml, BHtml]
-    }
 
     const eventFiringElements = computed(() => {
       const index = state.indexNumber * 2
@@ -242,7 +208,14 @@ export default defineComponent({
     const guessCombination = () => {
       // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
       const fileCombinations = getFileCombination(state.file)
+      const matchingsByFile = generateMatchingsByFile(fileCombinations)
+      state.matchingsByFile = sortMatchingsByFile(matchingsByFile)
+    }
+
+    const generateMatchingsByFile = (fileCombinations: FileCombination[]): MatchingsByFile => {
+      const { minimumCostBipartiteMatching } = new Matching()
       const matchingsByFile = [] as MatchingsByFile
+
       for (let i = 0; i < fileCombinations.length; i++) {
         const { fileX, fileY } = fileCombinations[i]
         const fileXEventHistories = addBitId(getAllEventHistories([fileX]))
@@ -251,7 +224,6 @@ export default defineComponent({
           fileXEventHistories,
           fileYEventHistories
         )
-        state.diffsDiffsArr = generateDiffsDiffsArr(historyCombinations)
         const combinationWithDiffsDiffs: combinationWithDiffsDiffs =
           historyCombinations.map((combination) => {
             const [X, Y] = combination
@@ -268,7 +240,11 @@ export default defineComponent({
         matchingsByFile.push(matchingWithFileName)
       }
 
-      const sortedMatchingsByFile = cloneDeep(matchingsByFile).sort((a, b) => {
+      return matchingsByFile
+    }
+
+    const sortMatchingsByFile = (matchingsByFile: MatchingsByFile) => {
+      return cloneDeep(matchingsByFile).sort((a, b) => {
         const a1 = fileNameToAlphabet(a.fileNameX).toLowerCase()
         const a2 = fileNameToAlphabet(b.fileNameX).toLowerCase()
         const b1 = fileNameToAlphabet(a.fileNameY).toLowerCase()
@@ -279,68 +255,6 @@ export default defineComponent({
         if (b1 > b2) return 1
         return 0
       })
-      state.matchingsByFile = sortedMatchingsByFile
-    }
-
-    const minimumCostBipartiteMatching = (
-      combinationWithDiffsDiffs: combinationWithDiffsDiffs
-    ): combinationWithDiffsDiffs => {
-      const sortedcombinationWithDiffsDiffs = cloneDeep(
-        combinationWithDiffsDiffs
-      ).sort((a, b) => {
-        const ad = a.diffsDiffs.diffsDiffs.length
-        const bd = b.diffsDiffs.diffsDiffs.length
-        return ad === bd ? 0 : ad < bd ? -1 : 1
-      })
-
-      const matchingArr = [] as combinationWithDiffsDiffs
-      const XeventIdArr = [] as string[]
-      const XIndexArr = [] as number[]
-      const YeventIdArr = [] as string[]
-      const YIndexArr = [] as number[]
-      let prevTED = 0 as number
-      for (let i = 0; i < sortedcombinationWithDiffsDiffs.length; i++) {
-        const comb = sortedcombinationWithDiffsDiffs[i]
-        const [combX, combY] = comb.combination
-
-        const isAEventIdExist = XeventIdArr.some((id: string) => {
-          return id === combX.history.eventInfo.eventId
-        })
-        const isBEventIdExist = YeventIdArr.some((id: string) => {
-          return id === combY.history.eventInfo.eventId
-        })
-
-        const isAIndexExist = XIndexArr.some((index: number) => {
-          return index === combX.index
-        })
-        const isBIndexExist = YIndexArr.some((index: number) => {
-          return index === combY.index
-        })
-
-        const isSameEventType =
-          combX.history.eventInfo.type === combY.history.eventInfo.type
-
-        if (
-          !isAIndexExist &&
-          !isBIndexExist &&
-          !isAEventIdExist &&
-          !isBEventIdExist &&
-          isSameEventType
-        ) {
-          matchingArr.push(comb)
-
-          const isSameTedToPrev = prevTED === comb.diffsDiffs.diffsDiffs.length
-          prevTED = comb.diffsDiffs.diffsDiffs.length
-
-          if (!isSameTedToPrev) {
-            XeventIdArr.push(combX.history.eventInfo.eventId)
-            YeventIdArr.push(combY.history.eventInfo.eventId)
-            XIndexArr.push(combX.index)
-            YIndexArr.push(combY.index)
-          }
-        }
-      }
-      return matchingArr
     }
 
     const sortFilesByName = (files: HistoriesByFile): HistoriesByFile => {
@@ -391,6 +305,6 @@ export default defineComponent({
       guessCombination,
       fileNameToAlphabet,
     }
-  },
+  }
 })
 </script>
