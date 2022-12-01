@@ -188,11 +188,11 @@ export default defineComponent({
       state.diffsDiffsArr = generateDiffsDiffsArr(combinationList)
     }
 
-    const eventFiringElements = computed(() => {
+    const eventFiringElements = computed(async () => {
       const index = state.indexNumber * 2
       if (state.combinationList.length === 0) return [null, null]
       const [A, B] = state.combinationList[state.key]
-      return generateEventFiringElements(A.history, B.history, index)
+      return await generateEventFiringElements(A.history, B.history, index)
     })
 
     const addBitId = (x: HistoryAndFileData[]) =>

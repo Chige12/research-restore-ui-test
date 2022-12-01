@@ -104,10 +104,10 @@
             >
           </div>
           <div class="mb-4" style="position: relative">
-            <div v-html="eventFiringElements[0]"></div>
+            <div v-html="state.eventFiringElements[0]"></div>
           </div>
           <div style="position: relative">
-            <div v-html="eventFiringElements[1]"></div>
+            <div v-html="state.eventFiringElements[1]"></div>
           </div>
         </div>
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
@@ -193,13 +193,13 @@ export default defineComponent({
       state.file = file
     })
 
-    const eventFiringElements = computed(() => {
+    watchEffect(async () => {
       const index = state.indexNumber * 2
       if (state.matchingsByFile.length === 0) return [null, null]
-      const [A, B] =
-        state.matchingsByFile[state.matchKey].matching[state.combKey]
-          .combination
-      return generateEventFiringElements(A.history, B.history, index)
+      const matching = state.matchingsByFile[state.matchKey].matching
+      const [A, B] = matching[state.combKey].combination
+      const eventFiringElements = await generateEventFiringElements(A.history, B.history, index)
+      state.eventFiringElements = eventFiringElements
     })
 
     const addBitId = (x: HistoryAndFileData[]) =>
@@ -301,7 +301,6 @@ export default defineComponent({
     return {
       state,
       historiesByFile,
-      eventFiringElements,
       guessCombination,
       fileNameToAlphabet,
     }

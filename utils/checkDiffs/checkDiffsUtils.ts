@@ -1,4 +1,3 @@
-import { toDom } from 'hast-util-to-dom'
 import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
 import { CombinationList } from '~/types/combination'
@@ -123,11 +122,11 @@ export const generateDiffsDiffsArr = (combinationList: CombinationList) => {
   return diffsDiffsArr
 }
 
-export const generateEventFiringElements = (
+export const generateEventFiringElements = async (
   A: EventHistory,
   B: EventHistory,
   index: number
-): (string | null)[] => {
+): Promise<(string | null)[]> => {
   const AEventFiringElement = getEventFiringElement(
     A.oldFormat.to,
     A.eventInfo.eventId,
@@ -139,16 +138,21 @@ export const generateEventFiringElements = (
     index
   )
   const AHtml = AEventFiringElement
-    ? (getTextHtml(AEventFiringElement) as string)
+    ? ((await getTextHtml(AEventFiringElement)) as string)
     : null
   const BHtml = BEventFiringElement
-    ? (getTextHtml(BEventFiringElement) as string)
+    ? ((await getTextHtml(BEventFiringElement)) as string)
     : null
   console.log(AHtml, BHtml)
   return [AHtml, BHtml]
 }
 
-export const getTextHtml = (hast: HastNode) => {
-  const node = toDom(hast) as Element
+const toDom = async (hast: HastNode): Promise<Node> => {
+  const module = await import('hast-util-to-dom')
+  return module.toDom(hast)
+}
+
+export const getTextHtml = async (hast: HastNode) => {
+  const node = (await toDom(hast)) as Element
   return node.outerHTML
 }
