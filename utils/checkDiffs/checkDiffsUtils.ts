@@ -77,11 +77,13 @@ export const generateIndicators = (X: EventHistory, Y: EventHistory) => {
     { number: matchDiffCounts.perfectMatchCount },
     { number: partialMatchPercentage },
   ]
+  const usedIndex = [0]
 
   const indicator: Indicator = {
-    names,
-    values,
+    names: names.filter((_, i) => usedIndex.some((ui) => ui === i)),
+    values: values.filter((_, i) => usedIndex.some((ui) => ui === i)),
   }
+
   return indicator
 }
 
