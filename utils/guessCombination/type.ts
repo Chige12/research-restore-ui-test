@@ -1,15 +1,13 @@
-import { DiffsDiffs } from '~/types/diffsDiffs'
 import { HistoryAndFileData } from '~/types/history'
+import { Indicator } from '~/types/indicator'
 
-export type combinationWithDiffsDiff = {
+export type CombinationWithIndicator = {
   combination: HistoryAndFileData[]
-  diffsDiffs: DiffsDiffs
+  indicator: Indicator
 }
-
-export type combinationWithDiffsDiffs = combinationWithDiffsDiff[]
 
 export type MatchingsByFile = {
   fileNameX: string
   fileNameY: string
-  matching: combinationWithDiffsDiffs
+  matching: CombinationWithIndicator[]
 }[]

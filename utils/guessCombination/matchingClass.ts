@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash'
 import { HistoryAndFileData } from '~/types/history'
-import { combinationWithDiffsDiff, combinationWithDiffsDiffs } from './type'
+import { CombinationWithIndicator } from './type'
 
 export class Matching {
   constructor() {
@@ -9,48 +9,69 @@ export class Matching {
     Matching.XIndexArr = []
     Matching.YeventIdArr = []
     Matching.YIndexArr = []
-    Matching.prevTED = 0
+    Matching.cashIndex = 0
+    Matching.prevIndicatorValue = 0
   }
 
-  static matchingArr: combinationWithDiffsDiffs = []
+  static matchingArr: CombinationWithIndicator[] = []
   static XeventIdArr: string[] = []
   static XIndexArr: number[] = []
   static YeventIdArr: string[] = []
   static YIndexArr: number[] = []
-  static prevTED: number = 0
+  static prevIndicatorValue: number = 0
+  static cashIndex: number | null = null
 
   minimumCostBipartiteMatching = (
-    combinationWithDiffsDiffs: combinationWithDiffsDiffs
-  ): combinationWithDiffsDiffs => {
-    const sortedArr = Matching.sortByTED(combinationWithDiffsDiffs)
+    combinationWithIndicators: CombinationWithIndicator[]
+  ): CombinationWithIndicator[] => {
+    const INDICATOR_NAME = 'TED'
+
+    const sortedArr = Matching.sortCombinationsByIndicator(
+      combinationWithIndicators,
+      INDICATOR_NAME
+    )
 
     for (let i = 0; i < sortedArr.length; i++) {
       const comb = sortedArr[i]
       const [histFileX, histFileY] = comb.combination
       if (Matching.isAdoptMatching(histFileX, histFileY)) {
         Matching.matchingArr.push(comb)
-        Matching.pushArrAddedId(comb)
+        Matching.pushArrAddedId(comb, INDICATOR_NAME)
       }
     }
     return Matching.matchingArr
   }
 
-  static sortByTED = (combinationWithDiffsDiffs: combinationWithDiffsDiffs) => {
-    const sortedArr = cloneDeep(combinationWithDiffsDiffs).sort((a, b) => {
-      const ad = a.diffsDiffs.diffsDiffs.length
-      const bd = b.diffsDiffs.diffsDiffs.length
+  static sortCombinationsByIndicator = (
+    combinationWithIndicators: CombinationWithIndicator[],
+    indicatorName: string
+  ) => {
+    const sortedArr = cloneDeep(combinationWithIndicators).sort((a, b) => {
+      const index = Matching.getIndex(a, indicatorName)
+      const ad = a.indicator.values[index].number
+      const bd = b.indicator.values[index].number
       return ad === bd ? 0 : ad < bd ? -1 : 1
     })
     return sortedArr
   }
 
-  static pushArrAddedId = (comb: combinationWithDiffsDiff) => {
-    const [histFileX, histFileY] = comb.combination
-    const isSameTedToPrev =
-      Matching.prevTED === comb.diffsDiffs.diffsDiffs.length
-    Matching.prevTED = comb.diffsDiffs.diffsDiffs.length
+  static getIndex = (comb: CombinationWithIndicator, indicatorName: string) => {
+    if (Matching.cashIndex !== null) return Matching.cashIndex
+    const index = comb.indicator.names.indexOf(indicatorName)
+    return index === -1 ? 0 : index
+  }
 
-    if (!isSameTedToPrev) {
+  static pushArrAddedId = (
+    comb: CombinationWithIndicator,
+    indicatorName: string
+  ) => {
+    const [histFileX, histFileY] = comb.combination
+    const index = Matching.getIndex(comb, indicatorName)
+    const isSameIndicatorToPrev =
+      Matching.prevIndicatorValue === comb.indicator.values[index].number
+    Matching.prevIndicatorValue = comb.indicator.values[index].number
+
+    if (!isSameIndicatorToPrev) {
       Matching.XeventIdArr.push(histFileX.history.eventInfo.eventId)
       Matching.YeventIdArr.push(histFileY.history.eventInfo.eventId)
       Matching.XIndexArr.push(histFileX.index)

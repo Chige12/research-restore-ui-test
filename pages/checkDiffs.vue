@@ -38,7 +38,7 @@
                 <th class="text-left">bitId [B]</th>
                 <th class="text-left">TED</th>
                 <th class="text-left">Button</th>
-                <!-- <th class="text-left" v-for="(indexName, inNa_Key) in state.diffsDiffsArr[0]" :key="`inNa-${inNa_Key}`">{{}}</th> -->
+                <th class="text-left" v-for="(name, inNa_Key) in state.indicatorsByEachCombination[0].names" :key="`inNa-${inNa_Key}`">{{name}}</th>
               </tr>
             </thead>
             <tbody>
@@ -59,7 +59,6 @@
                 <td>{{ combi[1].index }}</td>
                 <td>{{ combi[1].fileName }}</td>
                 <td>{{ combi[1].bitId }}</td>
-                <td>{{ state.diffsDiffsArr[c_key].diffsDiffs.length }}</td>
                 <td>
                   <v-btn
                     @click="
@@ -82,6 +81,7 @@
                     >Show Tree</v-btn
                   >
                 </td>
+                <td v-for="(value, inVa_key) in state.indicatorsByEachCombination[c_key].values" :key="`inVa-${inVa_key}`">{{ value.number }}</td>
               </tr>
             </tbody>
           </template>
@@ -99,19 +99,19 @@
             >
           </div>
           <div class="mb-4" style="position: relative">
-            <div v-html="eventFiringElements[0]"></div>
+            <div v-html="state.eventFiringElements[0]"></div>
           </div>
           <div style="position: relative">
-            <div v-html="eventFiringElements[1]"></div>
+            <div v-html="state.eventFiringElements[1]"></div>
           </div>
         </div>
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
           <div
             class="my-2"
-            v-for="(diff, dd_key) in state.diffsDiffsArr[state.key].diffsDiffs"
-            :key="`diffsDiffs-${dd_key}`"
+            v-for="(value, iv_key) in state.indicatorsByEachCombination[state.key].values"
+            :key="`diffsDiffs-${iv_key}`"
           >
-            {{ diff }}
+            {{ value.diffs || 'なし' }}
           </div>
         </div>
         <v-card-actions>
@@ -128,11 +128,11 @@
 import { cloneDeep } from 'lodash'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
-import { DiffsDiffs } from '~/types/diffsDiffs'
+import { Indicator } from '~/types/indicator'
 import { HistoriesByFile, HistoryAndFileData } from '~/types/history'
 import { CombinationList } from '~/utils/checkDiffs/checkDiffsType'
 import {
-  generateDiffsDiffsArr,
+  generateIndicatorsByEachCombination,
   getAllEventHistories,
   generateEventFiringElements,
   getCombinationList,
@@ -144,7 +144,7 @@ type State = {
   selectedFileA: string
   selectedFileB: string
   combinationList: CombinationList
-  diffsDiffsArr: DiffsDiffs[]
+  indicatorsByEachCombination: Indicator[]
   key: number
   dialog: boolean
   dialogType: 'preview' | 'showTree'
@@ -161,7 +161,7 @@ export default defineComponent({
       selectedFileA: '',
       selectedFileB: '',
       combinationList: [],
-      diffsDiffsArr: [],
+      indicatorsByEachCombination: [],
       dialog: false,
       dialogType: 'preview',
       key: 0,
@@ -184,15 +184,15 @@ export default defineComponent({
         bitId: bitList[i],
       }))
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
+      state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
       state.combinationList = combinationList
-      state.diffsDiffsArr = generateDiffsDiffsArr(combinationList)
     }
 
-    const eventFiringElements = computed(async () => {
+    watchEffect(async () => {
       const index = state.indexNumber * 2
       if (state.combinationList.length === 0) return [null, null]
       const [A, B] = state.combinationList[state.key]
-      return await generateEventFiringElements(A.history, B.history, index)
+      state.eventFiringElements = await generateEventFiringElements(A.history, B.history, index)
     })
 
     const addBitId = (x: HistoryAndFileData[]) =>
@@ -220,13 +220,12 @@ export default defineComponent({
         BEventHistories
       )
       state.combinationList = combinationList
-      state.diffsDiffsArr = generateDiffsDiffsArr(combinationList)
+      state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
     })
 
     return {
       state,
       historiesByFile,
-      eventFiringElements,
       generateCombinationList,
     }
   },

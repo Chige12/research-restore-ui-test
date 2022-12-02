@@ -1,12 +1,12 @@
 import { HastNode } from 'hast-util-to-dom/lib'
 import { diff as justDiff } from 'just-diff'
 import { CombinationList } from '~/types/combination'
-import { DiffsDiffs } from '~/types/diffsDiffs'
 import {
   EventHistory,
   HistoriesByFile,
   HistoryAndFileData,
 } from '~/types/history'
+import { Indicator } from '~/types/indicator'
 import { Diffs } from '../../types/diffs'
 import { getEventFiringElement } from '../getNewRootPathElements'
 
@@ -54,32 +54,35 @@ export const getCombinationListByFile = (
   return combinationList
 }
 
-export const calculateEditDistance = (X: EventHistory, Y: EventHistory) => {
+export const generateIndicators = (X: EventHistory, Y: EventHistory) => {
   const diffsDiffs = justDiff(X.diffs, Y.diffs)
-  const diffsWithbreadcrumbsPathsDiffs = justDiff(
-    X.diffsWithbreadcrumbsPaths,
-    Y.diffsWithbreadcrumbsPaths
-  )
+  // この指標はボツ
+  // const diffsWithbreadcrumbsPathsDiffs = justDiff(
+  //   X.diffsWithbreadcrumbsPaths,
+  //   Y.diffsWithbreadcrumbsPaths
+  // )
   const matchDiffCounts = calculateMatchDiffCounts(diffsDiffs)
   const partialMatchPercentage =
     calculatePartialMatchPercentage(matchDiffCounts)
-  const performanceIndexNames: string[] = [
+
+  const names: Indicator['names'] = [
+    'TED',
     '差分の部分一致数',
     '差分の完全一致数',
     '部分一致割合',
   ]
-  const performanceIndexes: number[] = [
-    matchDiffCounts.partialMatchCount,
-    matchDiffCounts.perfectMatchCount,
-    partialMatchPercentage,
+  const values: Indicator['values'] = [
+    { number: diffsDiffs.length, diffs: diffsDiffs },
+    { number: matchDiffCounts.partialMatchCount },
+    { number: matchDiffCounts.perfectMatchCount },
+    { number: partialMatchPercentage },
   ]
-  const obj: DiffsDiffs = {
-    diffsDiffs,
-    diffsWithbreadcrumbsPathsDiffs,
-    performanceIndexNames,
-    performanceIndexes,
+
+  const indicator: Indicator = {
+    names,
+    values,
   }
-  return obj
+  return indicator
 }
 
 // 評価指標の計算
@@ -114,12 +117,14 @@ const calculatePartialMatchPercentage = (matchDiffCounts: {
   return matchDiffCounts.partialMatchCount / allCount
 }
 
-export const generateDiffsDiffsArr = (combinationList: CombinationList) => {
-  const diffsDiffsArr = combinationList.map((combination) => {
+export const generateIndicatorsByEachCombination = (
+  combinationList: CombinationList
+) => {
+  const indicatorsByEachCombination = combinationList.map((combination) => {
     const [X, Y] = combination
-    return calculateEditDistance(X.history, Y.history)
+    return generateIndicators(X.history, Y.history)
   })
-  return diffsDiffsArr
+  return indicatorsByEachCombination
 }
 
 export const generateEventFiringElements = async (

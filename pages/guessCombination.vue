@@ -36,8 +36,8 @@
                     <th class="text-left">index [Y]</th>
                     <th class="text-left">name [Y]</th>
                     <th class="text-left">bitId [Y]</th>
-                    <th class="text-left">TED</th>
                     <th class="text-left">Button</th>
+                    <th v-for="(name, inNa_key) in match.matching[0].indicator.names" :key="`inNa-${inNa_key}`">{{ name }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -60,7 +60,6 @@
                     <td>{{ match.combination[1].index }}</td>
                     <td>{{ match.combination[1].fileName }}</td>
                     <td>{{ match.combination[1].bitId }}</td>
-                    <td>{{ match.diffsDiffs.diffsDiffs.length }}</td>
                     <td>
                       <v-btn
                         @click="
@@ -85,6 +84,7 @@
                         >Show Tree</v-btn
                       >
                     </td>
+                    <td v-for="(value, inVa_key) in match.indicator.values" :key="`inVa-${inVa_key}`">{{ value.number }}</td>
                   </tr>
                 </tbody>
               </template>
@@ -113,11 +113,10 @@
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
           <div
             class="my-2"
-            v-for="(diff, dd_key) in state.matchingsByFile[state.matchKey].matching[state.combKey]
-              .diffsDiffs"
-            :key="`diffsDiffs-${dd_key}`"
+            v-for="(value, inVa_key) in state.matchingsByFile[state.matchKey].matching[state.combKey].indicator.values"
+            :key="`diffsDiffs-${inVa_key}`"
           >
-            {{ diff }}
+            {{ value.diffs || 'なし' }}
           </div>
         </div>
         <v-card-actions>
@@ -143,10 +142,10 @@ import {
   getAllEventHistories,
   getCombinationListByFile,
   generateEventFiringElements,
-  calculateEditDistance,
+  generateIndicators,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 import {
-  combinationWithDiffsDiffs,
+  CombinationWithIndicator,
   MatchingsByFile,
 } from '~/utils/guessCombination/type'
 import {
@@ -160,6 +159,7 @@ type FileCombination = {
 
 type State = {
   file: HistoriesByFile
+  fileCombinations: FileCombination[]
   selectedFileA: string
   selectedFileB: string
   combKey: number
@@ -177,6 +177,7 @@ export default defineComponent({
 
     const state = reactive<State>({
       file: [],
+      fileCombinations: [],
       selectedFileA: '',
       selectedFileB: '',
       dialog: false,
@@ -191,6 +192,8 @@ export default defineComponent({
     onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
       state.file = file
+
+      state.fileCombinations = getFileCombination(state.file)
     })
 
     watchEffect(async () => {
@@ -207,12 +210,12 @@ export default defineComponent({
 
     const guessCombination = () => {
       // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
-      const fileCombinations = getFileCombination(state.file)
-      const matchingsByFile = generateMatchingsByFile(fileCombinations)
+      if (state.fileCombinations.length === 0) return
+      const matchingsByFile = matchingsByTED(state.fileCombinations)
       state.matchingsByFile = sortMatchingsByFile(matchingsByFile)
     }
 
-    const generateMatchingsByFile = (fileCombinations: FileCombination[]): MatchingsByFile => {
+    const matchingsByTED = (fileCombinations: FileCombination[]): MatchingsByFile => {
       const { minimumCostBipartiteMatching } = new Matching()
       const matchingsByFile = [] as MatchingsByFile
 
@@ -224,13 +227,13 @@ export default defineComponent({
           fileXEventHistories,
           fileYEventHistories
         )
-        const combinationWithDiffsDiffs: combinationWithDiffsDiffs =
+        const combinationWithIndicators: CombinationWithIndicator[] =
           historyCombinations.map((combination) => {
             const [X, Y] = combination
-            const diffsDiffs = calculateEditDistance(X.history, Y.history)
-            return { combination, diffsDiffs }
+            const indicator = generateIndicators(X.history, Y.history)
+            return { combination, indicator }
           })
-        const matching = minimumCostBipartiteMatching(combinationWithDiffsDiffs)
+        const matching = minimumCostBipartiteMatching(combinationWithIndicators)
 
         const matchingWithFileName = {
           fileNameX: fileX.fileName,
