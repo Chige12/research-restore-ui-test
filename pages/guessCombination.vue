@@ -3,7 +3,7 @@
     <v-dialog v-model="state.dialog" width="1000">
       <template v-slot:activator="{ on, attrs }">
         <div class="ma-4">
-          <v-btn class="mb-2" @click="guessCombination"
+          <v-btn class="mb-2" @click="guessCombination" fill color="primary" elevation="0"
             >guess comvination</v-btn
           >
           <div
@@ -30,14 +30,14 @@
                 <thead>
                   <tr>
                     <th class="text-left">bit</th>
-                    <th class="text-left">bitId [X]</th>
-                    <th class="text-left">name [X]</th>
-                    <th class="text-left">index [X]</th>
-                    <th class="text-left">index [Y]</th>
-                    <th class="text-left">name [Y]</th>
-                    <th class="text-left">bitId [Y]</th>
+                    <th class="text-left">bit X</th>
+                    <th class="text-left">name X</th>
+                    <th class="text-left">index X</th>
+                    <th class="text-left">index Y</th>
+                    <th class="text-left">name Y</th>
+                    <th class="text-left">bit Y</th>
                     <th class="text-left">Button</th>
-                    <th v-for="(name, inNa_key) in match.matching[0].indicator.names" :key="`inNa-${inNa_key}`">{{ name }}</th>
+                    <th class="text-left" v-for="(name, inNa_Key) in state.usedIndicatorNames" :key="`inNa-${inNa_Key}`">{{name}}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -55,10 +55,10 @@
                       }}
                     </td>
                     <td>{{ match.combination[0].bitId }}</td>
-                    <td>{{ match.combination[0].fileName }}</td>
+                    <td>{{ match.combination[0].fileName.slice(14, -5) }}</td>
                     <td>{{ match.combination[0].index }}</td>
                     <td>{{ match.combination[1].index }}</td>
-                    <td>{{ match.combination[1].fileName }}</td>
+                    <td>{{ match.combination[1].fileName.slice(14, -5) }}</td>
                     <td>{{ match.combination[1].bitId }}</td>
                     <td>
                       <v-btn
@@ -67,20 +67,22 @@
                           state.matchKey = m_key
                           state.dialogType = 'preview'
                         "
+                        class="mt-1"
                         v-bind="attrs"
                         v-on="on"
-                        small
+                        x-small outlined color="primary"
                         >Preview</v-btn
-                      >
+                      ><br/>
                       <v-btn
                         @click="
                           state.combKey = c_key
                           state.matchKey = m_key
                           state.dialogType = 'showTree'
                         "
+                        class="my-1"
                         v-bind="attrs"
                         v-on="on"
-                        small
+                        x-small outlined
                         >Show Tree</v-btn
                       >
                     </td>
@@ -113,11 +115,12 @@
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
           <div
             class="my-2"
-            v-for="(value, inVa_key) in state.matchingsByFile[state.matchKey].matching[state.combKey].indicator.values"
-            :key="`diffsDiffs-${inVa_key}`"
+            v-for="(diff, TEDDiff_key) in indicatorTEDDiffs"
+            :key="`TEDDiff-${TEDDiff_key}`"
           >
-            {{ value.diffs || 'なし' }}
+            {{ diff }}
           </div>
+          <div v-if="indicatorTEDDiffs.length === 0">差分なし</div>
         </div>
         <v-card-actions>
           <v-btn @click="state.dialog = false">close</v-btn>
@@ -125,8 +128,9 @@
       </v-card>
     </v-dialog>
   </div>
-  <div v-else>
-    <v-btn to="createDiffs">Go to createDiffs</v-btn>
+  <div v-else class="ma-4">
+    <p>まだ差分が作成できていません</p>
+    <v-btn to="createDiffs" outlined>Go to createDiffs</v-btn>
   </div>
 </template>
 <script lang="ts">
@@ -143,6 +147,7 @@ import {
   getCombinationListByFile,
   generateEventFiringElements,
   generateIndicators,
+  getUsedIndicatorNames,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 import {
   CombinationWithIndicator,
@@ -159,6 +164,7 @@ type FileCombination = {
 
 type State = {
   file: HistoriesByFile
+  usedIndicatorNames: string[]
   fileCombinations: FileCombination[]
   selectedFileA: string
   selectedFileB: string
@@ -177,6 +183,7 @@ export default defineComponent({
 
     const state = reactive<State>({
       file: [],
+      usedIndicatorNames: [],
       fileCombinations: [],
       selectedFileA: '',
       selectedFileB: '',
@@ -184,7 +191,7 @@ export default defineComponent({
       dialogType: 'preview',
       combKey: 0,
       matchKey: 0,
-      indexNumber: 2,
+      indexNumber: 0,
       eventFiringElements: [null, null],
       matchingsByFile: [],
     })
@@ -194,6 +201,16 @@ export default defineComponent({
       state.file = file
 
       state.fileCombinations = getFileCombination(state.file)
+      state.usedIndicatorNames = getUsedIndicatorNames()
+      guessCombination()
+    })
+
+    const indicatorTEDDiffs = computed(() => {
+      const {matchKey, combKey, matchingsByFile} = state
+      if (!matchingsByFile[matchKey]) return []
+      if (!matchingsByFile[matchKey].matching[combKey]) return []
+      const value = matchingsByFile[matchKey].matching[combKey].indicator.values[0]
+      return value.diffs ? value.diffs : []
     })
 
     watchEffect(async () => {
@@ -216,7 +233,8 @@ export default defineComponent({
     }
 
     const matchingsByTED = (fileCombinations: FileCombination[]): MatchingsByFile => {
-      const { minimumCostBipartiteMatching } = new Matching()
+      const useIndicatorName = 'TED'
+      const { minimumCostBipartiteMatching } = new Matching(useIndicatorName)
       const matchingsByFile = [] as MatchingsByFile
 
       for (let i = 0; i < fileCombinations.length; i++) {
@@ -304,6 +322,7 @@ export default defineComponent({
     return {
       state,
       historiesByFile,
+      indicatorTEDDiffs,
       guessCombination,
       fileNameToAlphabet,
     }

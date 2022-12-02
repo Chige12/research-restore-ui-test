@@ -3,32 +3,31 @@ import { HistoryAndFileData } from '~/types/history'
 import { CombinationWithIndicator } from './type'
 
 export class Matching {
-  constructor() {
+  constructor(useIndicatorName: string) {
+    Matching.useIndicatorName = useIndicatorName
     Matching.matchingArr = []
     Matching.XeventIdArr = []
     Matching.XIndexArr = []
     Matching.YeventIdArr = []
     Matching.YIndexArr = []
-    Matching.cashIndex = 0
+    Matching.cacheIndex = 0
     Matching.prevIndicatorValue = 0
   }
 
+  static useIndicatorName: string = 'TED'
   static matchingArr: CombinationWithIndicator[] = []
   static XeventIdArr: string[] = []
   static XIndexArr: number[] = []
   static YeventIdArr: string[] = []
   static YIndexArr: number[] = []
   static prevIndicatorValue: number = 0
-  static cashIndex: number | null = null
+  static cacheIndex: number | null = null
 
   minimumCostBipartiteMatching = (
     combinationWithIndicators: CombinationWithIndicator[]
   ): CombinationWithIndicator[] => {
-    const INDICATOR_NAME = 'TED'
-
     const sortedArr = Matching.sortCombinationsByIndicator(
-      combinationWithIndicators,
-      INDICATOR_NAME
+      combinationWithIndicators
     )
 
     for (let i = 0; i < sortedArr.length; i++) {
@@ -36,16 +35,16 @@ export class Matching {
       const [histFileX, histFileY] = comb.combination
       if (Matching.isAdoptMatching(histFileX, histFileY)) {
         Matching.matchingArr.push(comb)
-        Matching.pushArrAddedId(comb, INDICATOR_NAME)
+        Matching.pushArrAddedId(comb)
       }
     }
     return Matching.matchingArr
   }
 
   static sortCombinationsByIndicator = (
-    combinationWithIndicators: CombinationWithIndicator[],
-    indicatorName: string
+    combinationWithIndicators: CombinationWithIndicator[]
   ) => {
+    const indicatorName = Matching.useIndicatorName
     const sortedArr = cloneDeep(combinationWithIndicators).sort((a, b) => {
       const index = Matching.getIndex(a, indicatorName)
       const ad = a.indicator.values[index].number
@@ -56,17 +55,14 @@ export class Matching {
   }
 
   static getIndex = (comb: CombinationWithIndicator, indicatorName: string) => {
-    if (Matching.cashIndex !== null) return Matching.cashIndex
+    if (Matching.cacheIndex !== null) return Matching.cacheIndex
     const index = comb.indicator.names.indexOf(indicatorName)
     return index === -1 ? 0 : index
   }
 
-  static pushArrAddedId = (
-    comb: CombinationWithIndicator,
-    indicatorName: string
-  ) => {
+  static pushArrAddedId = (comb: CombinationWithIndicator) => {
     const [histFileX, histFileY] = comb.combination
-    const index = Matching.getIndex(comb, indicatorName)
+    const index = Matching.getIndex(comb, Matching.useIndicatorName)
     const isSameIndicatorToPrev =
       Matching.prevIndicatorValue === comb.indicator.values[index].number
     Matching.prevIndicatorValue = comb.indicator.values[index].number

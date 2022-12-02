@@ -1,8 +1,10 @@
 <template>
-  <div v-if="state.isExistJsonFile">
-    <v-btn @click="updateHistoriesByFile"> update! </v-btn>
-    <v-btn @click="createJsonFile">create Json File!</v-btn>
-    <div class="mx-6" v-for="file in storeHistoriesByFile" :key="file.fileName">
+  <div v-if="state.isExistJsonFile" class="ma-4">
+    <div>
+      <v-btn @click="updateHistoriesByFile" outlined> update! </v-btn>
+      <v-btn @click="createJsonFile" outlined>create Json File!</v-btn>
+    </div>
+    <div class="my-6" v-for="file in storeHistoriesByFile" :key="file.fileName">
       <h3>file {{ file.fileName }}</h3>
       <div v-for="(history, key) in file.histories" :key="`histories-${key}`">
         <p>{{ key }}</p>

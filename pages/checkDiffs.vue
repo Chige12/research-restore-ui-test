@@ -25,20 +25,19 @@
             </v-col>
           </v-row>
         </div>
-        <v-simple-table>
+        <v-simple-table class="ma-4">
           <template #default>
             <thead>
               <tr>
                 <th class="text-left">bit</th>
-                <th class="text-left">bitId [A]</th>
-                <th class="text-left">name [A]</th>
-                <th class="text-left">index [A]</th>
-                <th class="text-left">index [B]</th>
-                <th class="text-left">name [B]</th>
-                <th class="text-left">bitId [B]</th>
-                <th class="text-left">TED</th>
+                <th class="text-left">bit X</th>
+                <th class="text-left">name X</th>
+                <th class="text-left">index X</th>
+                <th class="text-left">index Y</th>
+                <th class="text-left">name Y</th>
+                <th class="text-left">bit Y</th>
                 <th class="text-left">Button</th>
-                <th class="text-left" v-for="(name, inNa_Key) in state.indicatorsByEachCombination[0].names" :key="`inNa-${inNa_Key}`">{{name}}</th>
+                <th class="text-left" v-for="(name, inNa_Key) in state.usedIndicatorNames" :key="`inNa-${inNa_Key}`">{{name}}</th>
               </tr>
             </thead>
             <tbody>
@@ -54,10 +53,10 @@
                   }}
                 </td>
                 <td>{{ combi[0].bitId }}</td>
-                <td>{{ combi[0].fileName }}</td>
+                <td>{{ combi[0].fileName.slice(14, -5) }}</td>
                 <td>{{ combi[0].index }}</td>
                 <td>{{ combi[1].index }}</td>
-                <td>{{ combi[1].fileName }}</td>
+                <td>{{ combi[1].fileName.slice(14, -5) }}</td>
                 <td>{{ combi[1].bitId }}</td>
                 <td>
                   <v-btn
@@ -65,19 +64,21 @@
                       state.key = c_key
                       state.dialogType = 'preview'
                     "
+                    class="mt-1"
                     v-bind="attrs"
                     v-on="on"
-                    small
+                    x-small outlined color="primary"
                     >Preview</v-btn
-                  >
+                  ><br/>
                   <v-btn
                     @click="
                       state.key = c_key
                       state.dialogType = 'showTree'
                     "
+                    class="my-1"
                     v-bind="attrs"
                     v-on="on"
-                    small
+                    x-small outlined
                     >Show Tree</v-btn
                   >
                 </td>
@@ -108,11 +109,12 @@
         <div class="pa-4" v-if="state.dialogType === 'showTree'">
           <div
             class="my-2"
-            v-for="(value, iv_key) in state.indicatorsByEachCombination[state.key].values"
-            :key="`diffsDiffs-${iv_key}`"
+            v-for="(diff, TEDDiff_key) in indicatorTEDDiffs"
+            :key="`TEDDiff-${TEDDiff_key}`"
           >
-            {{ value.diffs || 'なし' }}
+            {{ diff }}
           </div>
+          <div v-if="indicatorTEDDiffs.length === 0">差分なし</div>
         </div>
         <v-card-actions>
           <v-btn @click="state.dialog = false">close</v-btn>
@@ -137,10 +139,12 @@ import {
   generateEventFiringElements,
   getCombinationList,
   getCombinationListByFile,
+  getUsedIndicatorNames,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 
 type State = {
   file: HistoriesByFile
+  usedIndicatorNames: string[]
   selectedFileA: string
   selectedFileB: string
   combinationList: CombinationList
@@ -158,6 +162,7 @@ export default defineComponent({
 
     const state = reactive<State>({
       file: [],
+      usedIndicatorNames: [],
       selectedFileA: '',
       selectedFileB: '',
       combinationList: [],
@@ -165,24 +170,34 @@ export default defineComponent({
       dialog: false,
       dialogType: 'preview',
       key: 0,
-      indexNumber: 2,
+      indexNumber: 0,
       eventFiringElements: [null, null],
     })
 
     const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i)
 
+    const addBitIdToHistory = (history: HistoryAndFileData[]) => {
+      const bitList = createBitList(history.length)
+      return history.map((x, i) => ({ ...x, bitId: bitList[i] }))
+    }
+
     onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
       state.file = file
+
+      state.usedIndicatorNames = getUsedIndicatorNames()
+    })
+
+    const indicatorTEDDiffs = computed(() => {
+      const {key, indicatorsByEachCombination} = state
+      if (!indicatorsByEachCombination[key]) return []
+      const value = indicatorsByEachCombination[key].values[0]
+      return value.diffs ? value.diffs : []
     })
 
     const generateCombinationList = () => {
       const allEventHistories = getAllEventHistories(state.file)
-      const bitList = createBitList(allEventHistories.length)
-      const allEventHistoriesWithBitId = allEventHistories.map((x, i) => ({
-        ...x,
-        bitId: bitList[i],
-      }))
+      const allEventHistoriesWithBitId = addBitIdToHistory(allEventHistories)
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
       state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
       state.combinationList = combinationList
@@ -194,9 +209,6 @@ export default defineComponent({
       const [A, B] = state.combinationList[state.key]
       state.eventFiringElements = await generateEventFiringElements(A.history, B.history, index)
     })
-
-    const addBitId = (x: HistoryAndFileData[]) =>
-      x.map((x, i) => ({ ...x, bitId: i }))
 
     watchEffect(() => {
       const fileNameA = state.selectedFileA
@@ -210,10 +222,8 @@ export default defineComponent({
         (x) => x.fileName === fileNameB
       )
 
-      console.log(state.file, fileA, fileB)
-
-      const AEventHistories = addBitId(getAllEventHistories(fileA))
-      const BEventHistories = addBitId(getAllEventHistories(fileB))
+      const AEventHistories = addBitIdToHistory(getAllEventHistories(fileA))
+      const BEventHistories = addBitIdToHistory(getAllEventHistories(fileB))
 
       const combinationList = getCombinationListByFile(
         AEventHistories,
@@ -226,6 +236,7 @@ export default defineComponent({
     return {
       state,
       historiesByFile,
+      indicatorTEDDiffs,
       generateCombinationList,
     }
   },

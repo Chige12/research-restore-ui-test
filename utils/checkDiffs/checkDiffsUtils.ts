@@ -6,8 +6,9 @@ import {
   HistoriesByFile,
   HistoryAndFileData,
 } from '~/types/history'
-import { Indicator } from '~/types/indicator'
+import { Indicator, MatchDiffCounts } from '~/types/indicator'
 import { Diffs } from '../../types/diffs'
+import { DiffWithBreadcrumbsPath } from '../createDiffs/breadcrumbs'
 import { getEventFiringElement } from '../getNewRootPathElements'
 
 export const getAllEventHistories = (
@@ -54,41 +55,89 @@ export const getCombinationListByFile = (
   return combinationList
 }
 
-export const generateIndicators = (X: EventHistory, Y: EventHistory) => {
-  const diffsDiffs = justDiff(X.diffs, Y.diffs)
-  // この指標はボツ
-  // const diffsWithbreadcrumbsPathsDiffs = justDiff(
-  //   X.diffsWithbreadcrumbsPaths,
-  //   Y.diffsWithbreadcrumbsPaths
-  // )
-  const matchDiffCounts = calculateMatchDiffCounts(diffsDiffs)
-  const partialMatchPercentage =
-    calculatePartialMatchPercentage(matchDiffCounts)
+const use = <TA, TC>(
+  method: (arg: TA) => TC,
+  arg: TA,
+  calculateMethodsIndexes: number[]
+): TC | undefined => {
+  const isCalculate = calculateMethodsIndexes.some((i) =>
+    SHOW_INDEXES.some((ui) => ui === i)
+  )
+  if (!isCalculate) return undefined
+  const value = method(arg)
+  return value
+}
 
-  const names: Indicator['names'] = [
-    'TED',
-    '差分の部分一致数',
-    '差分の完全一致数',
-    '部分一致割合',
-  ]
+const getDiffsDiffs = (diffss: Diffs[]) => {
+  const [xDiff, yDiff] = diffss
+  return justDiff(xDiff, yDiff)
+}
+
+export const SHOW_INDEXES = [0]
+
+const indicatorNames = [
+  'TED',
+  '追加情報付与TED',
+  '差分の部分一致数',
+  '差分の完全一致数',
+  '部分一致割合',
+]
+
+export const getUsedIndicatorNames = () => {
+  return indicatorNames.filter((_, i) => SHOW_INDEXES.some((si) => si === i))
+}
+
+export const generateIndicators = (X: EventHistory, Y: EventHistory) => {
+  // 0
+  const diffsDiffs = use<Diffs[], Diffs>(
+    getDiffsDiffs,
+    [X.diffs, Y.diffs],
+    [0, 2, 3, 4]
+  ) as Diffs | undefined
+  const diffTED = diffsDiffs ? diffsDiffs.length : NaN
+
+  //1 ボツ指標
+  const diffsWithBcpDiffs = use<DiffWithBreadcrumbsPath[], Diffs>(
+    getDiffsDiffs,
+    [X.diffsWithbreadcrumbsPaths, Y.diffsWithbreadcrumbsPaths],
+    [1]
+  ) as Diffs | undefined
+  const bcpTED = diffsWithBcpDiffs ? diffsWithBcpDiffs.length : NaN
+
+  // 2 or 3 ボツ指標
+  const matchDiffCounts = use<Diffs | undefined, MatchDiffCounts>(
+    calculateMatchDiffCounts,
+    diffsDiffs,
+    [2, 3, 4]
+  ) as MatchDiffCounts
+  const partialMC = matchDiffCounts ? matchDiffCounts.partialMatchCount : NaN // 2
+  const perfectMC = matchDiffCounts ? matchDiffCounts.perfectMatchCount : NaN // 3
+
+  // 4 ボツ指標
+  const partialMatchPercentage = use<MatchDiffCounts | undefined, number>(
+    calculatePartialMatchPercentage,
+    matchDiffCounts,
+    [4]
+  ) as number
+
   const values: Indicator['values'] = [
-    { number: diffsDiffs.length, diffs: diffsDiffs },
-    { number: matchDiffCounts.partialMatchCount },
-    { number: matchDiffCounts.perfectMatchCount },
+    { number: diffTED, diffs: diffsDiffs },
+    { number: bcpTED, diffs: diffsWithBcpDiffs },
+    { number: partialMC },
+    { number: perfectMC },
     { number: partialMatchPercentage },
   ]
-  const usedIndex = [0]
 
   const indicator: Indicator = {
-    names: names.filter((_, i) => usedIndex.some((ui) => ui === i)),
-    values: values.filter((_, i) => usedIndex.some((ui) => ui === i)),
+    names: getUsedIndicatorNames(),
+    values: values.filter((_, i) => SHOW_INDEXES.some((si) => si === i)),
   }
-
   return indicator
 }
 
 // 評価指標の計算
-const calculateMatchDiffCounts = (diffs: Diffs) => {
+const calculateMatchDiffCounts = (diffs?: Diffs) => {
+  if (!diffs) return { perfectMatchCount: NaN, partialMatchCount: NaN }
   let partialMatchCount = 0
   let perfectMatchCount = 0
   for (let i = 0; i < diffs.length; i++) {
@@ -109,10 +158,8 @@ const calculateMatchDiffCounts = (diffs: Diffs) => {
   }
   return { perfectMatchCount, partialMatchCount }
 }
-const calculatePartialMatchPercentage = (matchDiffCounts: {
-  perfectMatchCount: number
-  partialMatchCount: number
-}) => {
+const calculatePartialMatchPercentage = (matchDiffCounts?: MatchDiffCounts) => {
+  if (!matchDiffCounts) return NaN
   const allCount =
     matchDiffCounts.perfectMatchCount + matchDiffCounts.partialMatchCount
   if (allCount === 0) return 0
