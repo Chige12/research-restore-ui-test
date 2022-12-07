@@ -7,7 +7,7 @@
             >guess comvination</v-btn
           >
           <div
-            v-for="(match, m_key) in state.matchingsByFile"
+            v-for="(match, m_key) in state.matchingsByFiles"
             :key="`match-${m_key}`"
           >
             <v-row>
@@ -42,7 +42,7 @@
                 </thead>
                 <tbody>
                   <tr
-                    v-for="(match, c_key) in match.matching"
+                    v-for="(match, c_key) in match.matchings"
                     :key="`match.combination-${c_key}`"
                   >
                     <td>
@@ -148,10 +148,11 @@ import {
   generateEventFiringElements,
   generateIndicators,
   getUsedIndicatorNames,
+  addBitIdToHistory,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 import {
   CombinationWithIndicator,
-  MatchingsByFile,
+  MatchingsWithFileName,
 } from '~/utils/guessCombination/type'
 import {
   Matching
@@ -174,7 +175,7 @@ type State = {
   dialogType: 'preview' | 'showTree'
   indexNumber: number
   eventFiringElements: (string | null)[]
-  matchingsByFile: MatchingsByFile
+  matchingsByFiles: MatchingsWithFileName[]
 }
 
 export default defineComponent({
@@ -193,7 +194,7 @@ export default defineComponent({
       matchKey: 0,
       indexNumber: 0,
       eventFiringElements: [null, null],
-      matchingsByFile: [],
+      matchingsByFiles: [],
     })
 
     onMounted(() => {
@@ -206,66 +207,62 @@ export default defineComponent({
     })
 
     const indicatorTEDDiffs = computed(() => {
-      const {matchKey, combKey, matchingsByFile} = state
-      if (!matchingsByFile[matchKey]) return []
-      if (!matchingsByFile[matchKey].matching[combKey]) return []
-      const value = matchingsByFile[matchKey].matching[combKey].indicator.values[0]
+      const {matchKey, combKey, matchingsByFiles} = state
+      if (!matchingsByFiles[matchKey]) return []
+      if (!matchingsByFiles[matchKey].matchings[combKey]) return []
+      const value = matchingsByFiles[matchKey].matchings[combKey].indicator.values[0]
       return value.diffs ? value.diffs : []
     })
 
     watchEffect(async () => {
       const index = state.indexNumber * 2
-      if (state.matchingsByFile.length === 0) return [null, null]
-      const matching = state.matchingsByFile[state.matchKey].matching
-      const [A, B] = matching[state.combKey].combination
-      const eventFiringElements = await generateEventFiringElements(A.history, B.history, index)
+      if (state.matchingsByFiles.length === 0) return [null, null]
+      const matching = state.matchingsByFiles[state.matchKey].matchings
+      const [X, Y] = matching[state.combKey].combination
+      const eventFiringElements = await generateEventFiringElements(X.history, Y.history, index)
       state.eventFiringElements = eventFiringElements
     })
-
-    const addBitId = (x: HistoryAndFileData[]) =>
-      x.map((x, i) => ({ ...x, bitId: i }))
 
     const guessCombination = () => {
       // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
       if (state.fileCombinations.length === 0) return
-      const matchingsByFile = matchingsByTED(state.fileCombinations)
-      state.matchingsByFile = sortMatchingsByFile(matchingsByFile)
+      const matchingsByFiles = matchingsByTED(state.fileCombinations)
+      state.matchingsByFiles = sortMatchingsByFileName(matchingsByFiles)
     }
 
-    const matchingsByTED = (fileCombinations: FileCombination[]): MatchingsByFile => {
+    const matchingsByTED = (fileCombinations: FileCombination[]): MatchingsWithFileName[] => {
       const useIndicatorName = 'TED'
       const { minimumCostBipartiteMatching } = new Matching(useIndicatorName)
-      const matchingsByFile = [] as MatchingsByFile
 
-      for (let i = 0; i < fileCombinations.length; i++) {
-        const { fileX, fileY } = fileCombinations[i]
-        const fileXEventHistories = addBitId(getAllEventHistories([fileX]))
-        const fileYEventHistories = addBitId(getAllEventHistories([fileY]))
-        const historyCombinations = getCombinationListByFile(
+      const matchingsByFiles: MatchingsWithFileName[] = fileCombinations.map((fileCombination) => {
+        const { fileX, fileY } = fileCombination
+        const fileXEventHistories = addBitIdToHistory(getAllEventHistories([fileX]), 0)
+        const fileYEventHistories = addBitIdToHistory(getAllEventHistories([fileY]), fileXEventHistories.length)
+        const combinations = getCombinationListByFile(
           fileXEventHistories,
           fileYEventHistories
         )
         const combinationWithIndicators: CombinationWithIndicator[] =
-          historyCombinations.map((combination) => {
+          combinations.map((combination) => {
             const [X, Y] = combination
             const indicator = generateIndicators(X.history, Y.history)
             return { combination, indicator }
           })
-        const matching = minimumCostBipartiteMatching(combinationWithIndicators)
+        const matchings = minimumCostBipartiteMatching(combinationWithIndicators)
 
-        const matchingWithFileName = {
+        const matchingsWithFileName: MatchingsWithFileName = {
           fileNameX: fileX.fileName,
           fileNameY: fileY.fileName,
-          matching,
+          matchings,
         }
-        matchingsByFile.push(matchingWithFileName)
-      }
+        return matchingsWithFileName
+      })
 
-      return matchingsByFile
+      return matchingsByFiles
     }
 
-    const sortMatchingsByFile = (matchingsByFile: MatchingsByFile) => {
-      return cloneDeep(matchingsByFile).sort((a, b) => {
+    const sortMatchingsByFileName = (matchingsByFiles: MatchingsWithFileName[]) => {
+      return cloneDeep(matchingsByFiles).sort((a, b) => {
         const a1 = fileNameToAlphabet(a.fileNameX).toLowerCase()
         const a2 = fileNameToAlphabet(b.fileNameX).toLowerCase()
         const b1 = fileNameToAlphabet(a.fileNameY).toLowerCase()

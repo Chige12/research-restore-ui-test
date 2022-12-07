@@ -55,6 +55,16 @@ export const getCombinationListByFile = (
   return combinationList
 }
 
+const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i)
+
+export const addBitIdToHistory = (
+  history: HistoryAndFileData[],
+  base: number
+) => {
+  const bitList = createBitList(history.length + base)
+  return history.map((x, i) => ({ ...x, bitId: bitList[i + base] }))
+}
+
 const use = <TA, TC>(
   method: (arg: TA) => TC,
   arg: TA,

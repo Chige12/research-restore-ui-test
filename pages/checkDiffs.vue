@@ -10,7 +10,7 @@
             <v-col cols="6">
               <v-select
                 :items="[''].concat(state.file.map((x) => x.fileName))"
-                v-model="state.selectedFileA"
+                v-model="state.selectedFileX"
                 label="[ A ]"
                 outlined
               ></v-select>
@@ -18,7 +18,7 @@
             <v-col cols="6">
               <v-select
                 :items="[''].concat(state.file.map((x) => x.fileName))"
-                v-model="state.selectedFileB"
+                v-model="state.selectedFileY"
                 label="[ B ]"
                 outlined
               ></v-select>
@@ -140,13 +140,14 @@ import {
   getCombinationList,
   getCombinationListByFile,
   getUsedIndicatorNames,
+  addBitIdToHistory,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 
 type State = {
   file: HistoriesByFile
   usedIndicatorNames: string[]
-  selectedFileA: string
-  selectedFileB: string
+  selectedFileX: string
+  selectedFileY: string
   combinationList: CombinationList
   indicatorsByEachCombination: Indicator[]
   key: number
@@ -163,8 +164,8 @@ export default defineComponent({
     const state = reactive<State>({
       file: [],
       usedIndicatorNames: [],
-      selectedFileA: '',
-      selectedFileB: '',
+      selectedFileX: '',
+      selectedFileY: '',
       combinationList: [],
       indicatorsByEachCombination: [],
       dialog: false,
@@ -174,12 +175,6 @@ export default defineComponent({
       eventFiringElements: [null, null],
     })
 
-    const createBitList = (n: number) => [...Array(n)].map((_, i) => 1 << i)
-
-    const addBitIdToHistory = (history: HistoryAndFileData[]) => {
-      const bitList = createBitList(history.length)
-      return history.map((x, i) => ({ ...x, bitId: bitList[i] }))
-    }
 
     onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
@@ -197,7 +192,7 @@ export default defineComponent({
 
     const generateCombinationList = () => {
       const allEventHistories = getAllEventHistories(state.file)
-      const allEventHistoriesWithBitId = addBitIdToHistory(allEventHistories)
+      const allEventHistoriesWithBitId = addBitIdToHistory(allEventHistories, 0)
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
       state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
       state.combinationList = combinationList
@@ -211,24 +206,24 @@ export default defineComponent({
     })
 
     watchEffect(() => {
-      const fileNameA = state.selectedFileA
-      const fileNameB = state.selectedFileB
-      if (fileNameA === '' || fileNameB === '') return
+      const fileNameX = state.selectedFileX
+      const fileNameY = state.selectedFileY
+      if (fileNameX === '' || fileNameY === '') return
 
-      const fileA: HistoriesByFile = state.file.filter(
-        (x) => x.fileName === fileNameA
+      const fileX: HistoriesByFile = state.file.filter(
+        (x) => x.fileName === fileNameX
       )
-      const fileB: HistoriesByFile = state.file.filter(
-        (x) => x.fileName === fileNameB
+      const fileY: HistoriesByFile = state.file.filter(
+        (x) => x.fileName === fileNameY
       )
 
-      const AEventHistories = addBitIdToHistory(getAllEventHistories(fileA))
-      const BEventHistories = addBitIdToHistory(getAllEventHistories(fileB))
+      const fileXEventHistories = addBitIdToHistory(getAllEventHistories(fileX), 0)
+      const fileYEventHistories = addBitIdToHistory(getAllEventHistories(fileY), fileXEventHistories.length)
 
       const combinationList = getCombinationListByFile(
-        AEventHistories,
-        BEventHistories
-      )
+          fileXEventHistories,
+          fileYEventHistories
+        )
       state.combinationList = combinationList
       state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
     })

@@ -6,8 +6,8 @@ export type CombinationWithIndicator = {
   indicator: Indicator
 }
 
-export type MatchingsByFile = {
+export type MatchingsWithFileName = {
   fileNameX: string
   fileNameY: string
-  matching: CombinationWithIndicator[]
-}[]
+  matchings: CombinationWithIndicator[]
+}
