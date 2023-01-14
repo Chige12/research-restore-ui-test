@@ -3,10 +3,25 @@
     <v-dialog v-model="state.dialog" width="1000">
       <template v-slot:activator="{ on, attrs }">
         <div class="ma-4">
-          <v-btn class="mb-2" @click="guessCombination" fill color="primary" elevation="0"
-            >guess comvination</v-btn
-          >
-          <div
+          <v-row>
+            <v-col cols="3">
+              <v-switch
+                v-model="state.isShow"
+                :label="`show: ${state.isShow ? 'ON ' : 'OFF'}`"
+              ></v-switch>
+            </v-col>
+            <v-col cols="3">
+              <v-select
+                v-model="state.useIndicatorName"
+                :items="state.usedIndicatorNames"
+                label="Select Indicator"
+              ></v-select>
+            </v-col>
+            <v-col cols="3">
+              <v-btn class="mb-8" @click="guessCombination" fill color="primary" elevation="0">guess comvination</v-btn>
+            </v-col>
+          </v-row>
+          <div class="mb-12"
             v-for="(match, m_key) in state.matchingsByFiles"
             :key="`match-${m_key}`"
           >
@@ -29,15 +44,19 @@
               <template #default>
                 <thead>
                   <tr>
-                    <th class="text-left">bit</th>
-                    <th class="text-left">bit X</th>
-                    <th class="text-left">name X</th>
+                    <th v-if="!state.isShow" class="text-left">X</th>
+                    <th v-if="!state.isShow" class="text-left">Y</th>
+                    <th v-if="state.isShow" class="text-left">bit</th>
+                    <th v-if="state.isShow" class="text-left">bit X</th>
+                    <th v-if="state.isShow" class="text-left">name X</th>
                     <th class="text-left">index X</th>
                     <th class="text-left">index Y</th>
-                    <th class="text-left">name Y</th>
-                    <th class="text-left">bit Y</th>
-                    <th class="text-left">Button</th>
-                    <th class="text-left" v-for="(name, inNa_Key) in state.usedIndicatorNames" :key="`inNa-${inNa_Key}`">{{name}}</th>
+                    <th v-if="state.isShow" class="text-left">name Y</th>
+                    <th v-if="state.isShow" class="text-left">bit Y</th>
+                    <th v-if="state.isShow" class="text-left">Button</th>
+                    <th class="text-left" v-for="(name, inNa_Key) in useIndicatorNameList" :key="`inNa-${inNa_Key}`">{{name}}</th>
+                    <th class="text-left">正誤</th>
+                    <th class="text-left">判定</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -45,7 +64,7 @@
                     v-for="(match, c_key) in match.matchings"
                     :key="`match.combination-${c_key}`"
                   >
-                    <td>
+                    <td v-if="state.isShow">
                       {{
                         match.combination[0].bitId !== undefined &&
                         match.combination[1].bitId !== undefined
@@ -54,13 +73,15 @@
                           : ''
                       }}
                     </td>
-                    <td>{{ match.combination[0].bitId }}</td>
-                    <td>{{ match.combination[0].fileName.slice(14, -5) }}</td>
+                    <td v-if="!state.isShow">{{ fileNameToAlphabet(match.combination[0].fileName) }}</td>
+                    <td v-if="!state.isShow">{{ fileNameToAlphabet(match.combination[1].fileName) }}</td>
+                    <td v-if="state.isShow">{{ match.combination[0].bitId }}</td>
+                    <td v-if="state.isShow">{{ match.combination[0].fileName.slice(14, -5) }}</td>
                     <td>{{ match.combination[0].index }}</td>
                     <td>{{ match.combination[1].index }}</td>
-                    <td>{{ match.combination[1].fileName.slice(14, -5) }}</td>
-                    <td>{{ match.combination[1].bitId }}</td>
-                    <td>
+                    <td v-if="state.isShow">{{ match.combination[1].fileName.slice(14, -5) }}</td>
+                    <td v-if="state.isShow">{{ match.combination[1].bitId }}</td>
+                    <td v-if="state.isShow">
                       <v-btn
                         @click="
                           state.combKey = c_key
@@ -87,6 +108,8 @@
                       >
                     </td>
                     <td v-for="(value, inVa_key) in match.indicator.values" :key="`inVa-${inVa_key}`">{{ value.number }}</td>
+                    <td>{{match.judge ? '正' : '誤'}}</td>
+                    <td>{{match.ableToJudge ? '可' : '不可'}}</td>
                   </tr>
                 </tbody>
               </template>
@@ -121,6 +144,7 @@
             {{ diff }}
           </div>
           <div v-if="indicatorTEDDiffs.length === 0">差分なし</div>
+          <div v-if="indicatorTEDSubData">{{indicatorTEDSubData}}</div>
         </div>
         <v-card-actions>
           <v-btn @click="state.dialog = false">close</v-btn>
@@ -138,7 +162,6 @@ import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import {
-  HistoryAndFileData,
   HistoriesByFile,
   HistoriesAndFileData,
 } from '~/types/history'
@@ -149,6 +172,7 @@ import {
   generateIndicators,
   getUsedIndicatorNames,
   addBitIdToHistory,
+  indicatorNames,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 import {
   CombinationWithIndicator,
@@ -164,8 +188,11 @@ type FileCombination = {
 }
 
 type State = {
+  isShow: boolean,
   file: HistoriesByFile
   usedIndicatorNames: string[]
+  useIndicatorName: string
+  showIndexes: number[]
   fileCombinations: FileCombination[]
   selectedFileA: string
   selectedFileB: string
@@ -183,8 +210,11 @@ export default defineComponent({
     const { historiesByFile } = useHistoriesByFileStore()
 
     const state = reactive<State>({
+      isShow: true,
       file: [],
       usedIndicatorNames: [],
+      useIndicatorName: 'VED+TED by Tree',
+      showIndexes: [0, 5, 6, 7],
       fileCombinations: [],
       selectedFileA: '',
       selectedFileB: '',
@@ -202,7 +232,8 @@ export default defineComponent({
       state.file = file
 
       state.fileCombinations = getFileCombination(state.file)
-      state.usedIndicatorNames = getUsedIndicatorNames()
+      state.usedIndicatorNames = getUsedIndicatorNames(state.showIndexes)
+      state.showIndexes = [7]
       guessCombination()
     })
 
@@ -214,6 +245,18 @@ export default defineComponent({
       return value.diffs ? value.diffs : []
     })
 
+    const indicatorTEDSubData = computed(() => {
+      const {matchKey, combKey, matchingsByFiles} = state
+      if (!matchingsByFiles[matchKey]) return []
+      if (!matchingsByFiles[matchKey].matchings[combKey]) return []
+      const value = matchingsByFiles[matchKey].matchings[combKey].indicator.values[0]
+      return value.sub ? value.sub : ''
+    })
+
+    const useIndicatorNameList = computed(() => {
+      return [state.useIndicatorName]
+    })
+
     watchEffect(async () => {
       const index = state.indexNumber * 2
       if (state.matchingsByFiles.length === 0) return [null, null]
@@ -221,6 +264,11 @@ export default defineComponent({
       const [X, Y] = matching[state.combKey].combination
       const eventFiringElements = await generateEventFiringElements(X.history, Y.history, index)
       state.eventFiringElements = eventFiringElements
+    })
+
+    watch(() => state.useIndicatorName, (next) => {
+      state.showIndexes = [indicatorNames.findIndex(name => name === next)]
+      guessCombination()
     })
 
     const guessCombination = () => {
@@ -231,10 +279,10 @@ export default defineComponent({
     }
 
     const matchingsByTED = (fileCombinations: FileCombination[]): MatchingsWithFileName[] => {
-      const useIndicatorName = 'TED'
-      const { minimumCostBipartiteMatching } = new Matching(useIndicatorName)
-
-      const matchingsByFiles: MatchingsWithFileName[] = fileCombinations.map((fileCombination) => {
+      const matchingsByFiles: MatchingsWithFileName[] = fileCombinations.filter(fileCombination => {
+        const { fileX, fileY } = fileCombination
+        return fileX.fileName.split('-')[1] === fileY.fileName.split('-')[1]
+      }).map((fileCombination) => {
         const { fileX, fileY } = fileCombination
         const fileXEventHistories = addBitIdToHistory(getAllEventHistories([fileX]), 0)
         const fileYEventHistories = addBitIdToHistory(getAllEventHistories([fileY]), fileXEventHistories.length)
@@ -245,9 +293,10 @@ export default defineComponent({
         const combinationWithIndicators: CombinationWithIndicator[] =
           combinations.map((combination) => {
             const [X, Y] = combination
-            const indicator = generateIndicators(X.history, Y.history)
+            const indicator = generateIndicators(X.history, Y.history, state.showIndexes)
             return { combination, indicator }
           })
+        const { minimumCostBipartiteMatching } = new Matching(state.useIndicatorName)
         const matchings = minimumCostBipartiteMatching(combinationWithIndicators)
 
         const matchingsWithFileName: MatchingsWithFileName = {
@@ -311,6 +360,10 @@ export default defineComponent({
           return 'D'
         case 'diffHistories-signin-comp01-2.json':
           return 'E'
+        case 'diffHistories-search-search01.json':
+          return 'E'
+        case 'diffHistories-search-search02.json':
+          return 'F'
         default:
           return fileName
       }
@@ -318,8 +371,10 @@ export default defineComponent({
 
     return {
       state,
+      useIndicatorNameList,
       historiesByFile,
       indicatorTEDDiffs,
+      indicatorTEDSubData,
       guessCombination,
       fileNameToAlphabet,
     }

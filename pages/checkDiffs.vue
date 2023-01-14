@@ -131,8 +131,7 @@ import { cloneDeep } from 'lodash'
 import { defineComponent } from 'vue'
 import { useHistoriesByFileStore } from '~/composables/globalState'
 import { Indicator } from '~/types/indicator'
-import { HistoriesByFile, HistoryAndFileData } from '~/types/history'
-import { CombinationList } from '~/utils/checkDiffs/checkDiffsType'
+import { HistoriesByFile } from '~/types/history'
 import {
   generateIndicatorsByEachCombination,
   getAllEventHistories,
@@ -142,10 +141,12 @@ import {
   getUsedIndicatorNames,
   addBitIdToHistory,
 } from '~/utils/checkDiffs/checkDiffsUtils'
+import { CombinationList } from '~/types/combination'
 
 type State = {
   file: HistoriesByFile
   usedIndicatorNames: string[]
+  showIndexes: number[]
   selectedFileX: string
   selectedFileY: string
   combinationList: CombinationList
@@ -164,6 +165,7 @@ export default defineComponent({
     const state = reactive<State>({
       file: [],
       usedIndicatorNames: [],
+      showIndexes: [7],
       selectedFileX: '',
       selectedFileY: '',
       combinationList: [],
@@ -180,7 +182,7 @@ export default defineComponent({
       const file = cloneDeep(historiesByFile.value)
       state.file = file
 
-      state.usedIndicatorNames = getUsedIndicatorNames()
+      state.usedIndicatorNames = getUsedIndicatorNames(state.showIndexes)
     })
 
     const indicatorTEDDiffs = computed(() => {
@@ -194,7 +196,7 @@ export default defineComponent({
       const allEventHistories = getAllEventHistories(state.file)
       const allEventHistoriesWithBitId = addBitIdToHistory(allEventHistories, 0)
       const combinationList = getCombinationList(allEventHistoriesWithBitId)
-      state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
+      state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList, state.showIndexes)
       state.combinationList = combinationList
     }
 
@@ -225,7 +227,7 @@ export default defineComponent({
           fileYEventHistories
         )
       state.combinationList = combinationList
-      state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList)
+      state.indicatorsByEachCombination = generateIndicatorsByEachCombination(combinationList, state.showIndexes)
     })
 
     return {

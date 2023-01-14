@@ -43,15 +43,16 @@ const getPathById = (hast: HastNode, elementId: string): Path => {
 }
 
 const generateElementsDeletedChildArr = (element: HastNode, pathArr: Path) => {
+  // path上にある全ての親エレメントの配列を生成:親から順番にエレメントを取得して配列化
   const elementsDeleteChildArr = pathArr.map((_path, index, arr) => {
     const deleteChildPath = arr.slice(0, index + 2)
     const deleteChildProperty = deleteChildPath.slice(-1)[0] // 配列の最後だけ取得
     const deleteChildElement = cloneDeep(
       get(element, deleteChildPath.slice(0, -1))
-    ) // 最後だけ除いて取得
+    ) // 配列の最後だけ除いて取得
     // 親を示す際に、自分が含まれてしまうので消去し、兄弟だけにする。
     if (deleteChildProperty !== 'properties') {
-      deleteChildElement[deleteChildProperty] = 'me'
+      deleteChildElement[deleteChildProperty] = 'child'
     }
     return deleteChildElement
   })
@@ -89,6 +90,12 @@ export const getNewRootPathElements = (
   const newRootPathElements = generateNewRootPathElementsByArr(
     elementsDeleteChildArr
   )
+  const json = JSON.stringify(newRootPathElements, null, 4)
+  if (json.indexOf('brothers') !== -1) {
+    console.log(hast)
+    console.log(newRootPathElements)
+  }
+
   return newRootPathElements
 }
 

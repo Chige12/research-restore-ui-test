@@ -5,6 +5,7 @@ export type Indicator = {
   values: {
     number: number
     diffs?: Diffs | undefined
+    sub?: any
   }[]
 }
 

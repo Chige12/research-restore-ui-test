@@ -14,7 +14,7 @@ export class Matching {
     Matching.prevIndicatorValue = 0
   }
 
-  static useIndicatorName: string = 'TED'
+  static useIndicatorName: string = ''
   static matchingArr: CombinationWithIndicator[] = []
   static XeventIdArr: string[] = []
   static XIndexArr: number[] = []
@@ -34,7 +34,10 @@ export class Matching {
       const comb = sortedArr[i]
       const [histFileX, histFileY] = comb.combination
       if (Matching.isAdoptMatching(histFileX, histFileY)) {
-        Matching.matchingArr.push(comb)
+        const judge: boolean | undefined = histFileX.index === histFileY.index
+        const ableToJudge: boolean | undefined = true
+        const adoptedComb = { ...comb, judge, ableToJudge }
+        Matching.matchingArr.push(adoptedComb)
         Matching.pushArrAddedId(comb)
       }
     }
@@ -56,7 +59,9 @@ export class Matching {
 
   static getIndex = (comb: CombinationWithIndicator, indicatorName: string) => {
     if (Matching.cacheIndex !== null) return Matching.cacheIndex
-    const index = comb.indicator.names.indexOf(indicatorName)
+    const index = comb.indicator.names.findIndex(
+      (name) => name === indicatorName
+    )
     return index === -1 ? 0 : index
   }
 
@@ -72,6 +77,24 @@ export class Matching {
       Matching.YeventIdArr.push(histFileY.history.eventInfo.eventId)
       Matching.XIndexArr.push(histFileX.index)
       Matching.YIndexArr.push(histFileY.index)
+    } else {
+      Matching.updatePrevJudgement(index)
+    }
+  }
+
+  static updatePrevJudgement = (index: number) => {
+    const updateIndex = Matching.matchingArr.findIndex(
+      (match) =>
+        match.indicator.values[index].number === Matching.prevIndicatorValue
+    )
+    const ableToJudge: boolean | undefined = false
+    Matching.matchingArr[updateIndex] = {
+      ...Matching.matchingArr[updateIndex],
+      ableToJudge,
+    }
+    Matching.matchingArr[Matching.matchingArr.length - 1] = {
+      ...Matching.matchingArr[Matching.matchingArr.length - 1],
+      ableToJudge,
     }
   }
 
@@ -86,23 +109,10 @@ export class Matching {
       return id === historyAndFileDataY.history.eventInfo.eventId
     })
 
-    const isAIndexExist = Matching.XIndexArr.some((index: number) => {
-      return index === historyAndFileDataX.index
-    })
-    const isBIndexExist = Matching.YIndexArr.some((index: number) => {
-      return index === historyAndFileDataY.index
-    })
-
     const isSameEventType =
       historyAndFileDataX.history.eventInfo.type ===
       historyAndFileDataY.history.eventInfo.type
 
-    return (
-      !isAEventIdExist &&
-      !isBEventIdExist &&
-      !isAIndexExist &&
-      !isBIndexExist &&
-      isSameEventType
-    )
+    return !isAEventIdExist && !isBEventIdExist && isSameEventType
   }
 }
