@@ -304,12 +304,14 @@ const diffsToPathObj = (diffs: Diffs): DiffsPathByOperation => {
 const pathToPathObj = (diffs: Diffs): newRootElement => {
   const output = {} as newRootElement
   let current = {} as any
-  const pathsList = diffs.map((diff) => diff.path)
+  const pathsList = diffs.map((diff) => {
+    return diff.path
+  })
 
   for (const path of pathsList) {
     current = output
     for (const segment of path) {
-      if (segment !== '') {
+      if (segment.toString() !== '') {
         if (!(segment in current)) {
           current[segment] = {}
         }
@@ -348,12 +350,13 @@ const calculateValueEditDistance = (
   valuesX: OpAndValue[],
   valuesY: OpAndValue[]
 ): number => {
-  const valueObjX = valuesToObj(valuesX)
-  const valueObjY = valuesToObj(valuesY)
-  const diff = justDiff(valueObjX, valueObjY)
-  console.log(valueObjX, valueObjY, diff)
-  const levenshteinDistance = diff.length
-  return levenshteinDistance
+  const { add: addX, remove: removeX, replace: replaceX } = valuesToObj(valuesX)
+  const { add: addY, remove: removeY, replace: replaceY } = valuesToObj(valuesY)
+  const addDiff = justDiff(addX, addY)
+  const removeDiff = justDiff(removeX, removeY)
+  const replaceDiff = justDiff(replaceX, replaceY)
+  const valueDistance = addDiff.length + removeDiff.length + replaceDiff.length
+  return valueDistance
 }
 
 const valuesToObj = (arr: OpAndValue[]): ValuesByOperation => {
@@ -375,19 +378,7 @@ const valuesToObj = (arr: OpAndValue[]): ValuesByOperation => {
       .map((v) => v.count)
     const counter = Math.max(...countersList) + 1
     const valuePath = sameNumberCount !== 0 ? `${value}-(${counter})` : value
-    switch (op) {
-      case 'add':
-        obj.add[valuePath] = value
-        break
-      case 'remove':
-        obj.remove[valuePath] = value
-        break
-      case 'replace':
-        obj.replace[valuePath] = value
-        break
-      default:
-        break
-    }
+    obj[op][valuePath] = value
     pushedArr.push(value)
   }
   return obj
