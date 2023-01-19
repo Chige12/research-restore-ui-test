@@ -17,8 +17,9 @@
                 label="Select Indicator"
               ></v-select>
             </v-col>
-            <v-col cols="3">
-              <v-btn class="mb-8" @click="guessCombination" fill color="primary" elevation="0">guess comvination</v-btn>
+            <v-col cols="6">
+              <v-btn @click="guessCombination" fill color="primary" elevation="0">guess comvination</v-btn>
+              <v-btn v-if="state.matchingsByFiles.length > 0" to="evaluations" outlined elevation="0">go to evaluations</v-btn>
             </v-col>
           </v-row>
           
@@ -225,7 +226,7 @@ export default defineComponent({
   setup() {
     const {state: historiesByFile } =
       useFileStore<HistoriesByFile>('historiesByFile', [])
-    const { setState } =
+    const { state: matchingState, setState } =
       useFileStore<MatchingsByFilesAndIndicator[]>('matchingsByFilesAndIndicator', [])
 
     const state = reactive<State>({
@@ -254,6 +255,7 @@ export default defineComponent({
       const file = cloneDeep(historiesByFile.value)
       state.file = file
       state.fileCombinations = getFileCombination(state.file)
+      state.matchingsByFilesAndIndicator = matchingState.value
 
       // 選択肢を生成
       state.indicatorNameSelections = getUsedIndicatorNames(INDICATOR_INDEXES)

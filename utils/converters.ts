@@ -1,3 +1,5 @@
+import { Group } from './guessCombination/type'
+
 export const fileNameToAlphabet = (fileName: string): string => {
   switch (fileName) {
     case 'diffHistories-signin-comp01.json':
@@ -48,7 +50,7 @@ export const fileNameToAlphabet = (fileName: string): string => {
 export const changeToTejunNumber = (
   opNum: string,
   index: number,
-  group: 'signin' | 'table'
+  group: Group
 ): number => {
   // [n,m] → xの手順番号がnのとき，xの変換コマンドはn-1
   const signin = [
@@ -69,7 +71,7 @@ export const changeToTejunNumber = (
   return tejunNumber - 1
 }
 
-export const alphabetToGroup = (alphabet: string) => {
+export const alphabetToGroup = (alphabet: string): Group | undefined => {
   switch (alphabet) {
     case 'A':
     case 'B':
@@ -81,5 +83,23 @@ export const alphabetToGroup = (alphabet: string) => {
       return 'table'
     default:
       return undefined
+  }
+}
+
+export type AlphabetAndOpAndGroup = {
+  alphabet: string
+  opNum: number
+  group: Group | undefined
+}
+
+export const fileNameToAlphabetAndOpAndGroup = (
+  fileName: string
+): AlphabetAndOpAndGroup => {
+  const [alphabet, opNum] = fileNameToAlphabet(fileName).split('_')
+  const group = alphabetToGroup(alphabet)
+  return {
+    alphabet,
+    opNum: Number(opNum),
+    group,
   }
 }
