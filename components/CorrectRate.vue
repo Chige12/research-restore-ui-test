@@ -66,8 +66,8 @@ export default defineComponent({
       const correctRatesByGroup = groupList.map((groupName) => {
         const correctRateByIndicator = matchingsByFilesAndIndicator.map(x => {
           const group = x.matchingsByFiles.filter(x => {
-            const alphabetAndOpAndGroup = fileNameToAlphabetAndOpAndGroup(x.fileNameX)
-            return alphabetAndOpAndGroup.group === groupName
+            const { group } = fileNameToAlphabetAndOpAndGroup(x.fileNameX)
+            return group === groupName
           })
 
           const sumCounts = group.map(({allCount, correctCount}) => ({allCount, correctCount})).reduce((accumulator, current) => {
