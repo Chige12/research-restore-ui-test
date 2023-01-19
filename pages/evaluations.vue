@@ -3,11 +3,11 @@
     <v-btn to="guessCombination" outlined>Go to guessCombination</v-btn>
     <div v-if="createdIndicatorNames.length !== 0">
       <span class="ma-1" v-for='(name, nameIndex) in createdIndicatorNames' :key="`indicator-name-${nameIndex}`">{{name}}</span>
-      <CorrectRate :arr="matchingsByFilesAndIndicator" />
     </div>
     <div v-else>
       <p>まだ指標が作成できていません</p>
     </div>
+    <CorrectRate :arr="matchingsByFilesAndIndicator" />
   </div>
 </template>
 <script lang="ts">

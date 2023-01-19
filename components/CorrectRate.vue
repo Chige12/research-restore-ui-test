@@ -54,8 +54,30 @@ export default defineComponent({
     })
 
     onMounted(() => {
-      genereteCorrectRateArr()
+      state.correctRatesByGroup = getStrage()
+
+      const isNoStrage = state.correctRatesByGroup.length === 0
+      if (isNoStrage) {
+        state.correctRatesByGroup = genereteCorrectRateArr()
+        saveStrage()
+      }
+      if (props.arr && (props.arr.length >= (state.correctRatesByGroup.length / 2))) {
+        state.correctRatesByGroup = genereteCorrectRateArr()
+        saveStrage()
+      }
     })
+
+    const getStrage = () => {
+      const json = localStorage.getItem('correctRatesByGroup')
+      if (!json) return
+      console.log(json)
+      return JSON.parse(json)
+    }
+
+    const saveStrage = () => {
+      const setjson = JSON.stringify(state.correctRatesByGroup)
+      localStorage.setItem('correctRatesByGroup', setjson)
+    }
 
     const genereteCorrectRateArr = () => {
       const matchingsByFilesAndIndicator = props.arr
@@ -91,7 +113,7 @@ export default defineComponent({
         })
         return correctRateByIndicator
       })
-      state.correctRatesByGroup = correctRatesByGroup.flat()
+      return correctRatesByGroup.flat()
     }
 
     const headers = computed(() => {
