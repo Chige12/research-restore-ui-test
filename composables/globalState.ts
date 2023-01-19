@@ -1,6 +1,4 @@
 import { readonly, ref } from 'vue'
-import { HistoriesByFile } from '~/types/history'
-import { MatchingsByFile } from '~/utils/guessCombination/type'
 import { JsonFile } from '~/utils/jsonFilesType'
 
 export const useJsonFiles = () => {
@@ -13,28 +11,14 @@ export const useJsonFiles = () => {
   return { jsonFiles: readonly(state), setJsonFiles }
 }
 
-export const useHistoriesByFileStore = () => {
-  const initialState = [] as HistoriesByFile
-  const state = useState('historiesByFile', () => initialState)
-  const setHistoriesByFile = (historiesByFile: HistoriesByFile) => {
-    state.value = historiesByFile
+export const useFileStore = <T>(key: string, initialState: T) => {
+  const state = useState(key, () => initialState)
+  const setState = (value: T) => {
+    state.value = value
   }
 
   return {
-    historiesByFile: shallowReadonly(state),
-    setHistoriesByFile,
-  }
-}
-
-export const useMatchingsByFileStore = () => {
-  const initialState = [] as MatchingsByFile
-  const state = useState('matchingsByFile', () => initialState)
-  const setMatchingsByFile = (matchingsByFile: MatchingsByFile) => {
-    state.value = matchingsByFile
-  }
-
-  return {
-    historiesByFile: shallowReadonly(state),
-    setMatchingsByFile,
+    state: shallowReadonly(state),
+    setState,
   }
 }

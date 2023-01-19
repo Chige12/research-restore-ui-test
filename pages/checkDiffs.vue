@@ -129,7 +129,7 @@
 <script lang="ts">
 import { cloneDeep } from 'lodash'
 import { defineComponent } from 'vue'
-import { useHistoriesByFileStore } from '~/composables/globalState'
+import { useFileStore } from '~/composables/globalState'
 import { Indicator } from '~/types/indicator'
 import { HistoriesByFile } from '~/types/history'
 import {
@@ -160,7 +160,8 @@ type State = {
 
 export default defineComponent({
   setup() {
-    const { historiesByFile } = useHistoriesByFileStore()
+    const {state: historiesByFile } =
+      useFileStore<HistoriesByFile>('historiesByFile', [])
 
     const state = reactive<State>({
       file: [],

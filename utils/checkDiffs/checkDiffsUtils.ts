@@ -89,10 +89,10 @@ const getDiffsDiffs = (diffss: Diffs[]) => {
 
 const getDiffsDiffsByTree = (diffss: Diffs[]) => {
   const [diffsX, diffsY] = diffss
-  return justDiff(diffsToPathObj(diffsX), diffsToPathObj(diffsY))
+  return justDiff(diffsToPathObj(diffsX, true), diffsToPathObj(diffsY, true))
 }
 
-export const indicatorNames = [
+export const allIndicatorNames = [
   'TED',
   '追加情報付与TED',
   '差分の部分一致数',
@@ -104,20 +104,20 @@ export const indicatorNames = [
 ]
 
 export const getUsedIndicatorNames = (showIndexes: number[]) => {
-  return indicatorNames.filter((_, i) => showIndexes.some((si) => si === i))
+  return allIndicatorNames.filter((_, i) => showIndexes.some((si) => si === i))
 }
 
 export const generateIndicators = (
   X: EventHistory,
   Y: EventHistory,
-  showIndexes: number[]
+  calcIndicatorIndexes: number[]
 ) => {
   // 0
   const diffsDiffs = use<Diffs[], Diffs>(
     getDiffsDiffs,
     [X.diffs, Y.diffs],
     [0, 2, 3, 4],
-    showIndexes
+    calcIndicatorIndexes
   )
   const diffTED = diffsDiffs ? diffsDiffs.length : NaN
 
@@ -126,7 +126,7 @@ export const generateIndicators = (
     getDiffsDiffs,
     [X.diffsWithbreadcrumbsPaths, Y.diffsWithbreadcrumbsPaths],
     [1],
-    showIndexes
+    calcIndicatorIndexes
   )
   const bcpTED = diffsWithBcpDiffs ? diffsWithBcpDiffs.length : NaN
 
@@ -135,7 +135,7 @@ export const generateIndicators = (
     calculateMatchDiffCounts,
     diffsDiffs,
     [2, 3, 4],
-    showIndexes
+    calcIndicatorIndexes
   )
   const partialMC = matchDiffCounts ? matchDiffCounts.partialMatchCount : NaN // 2
   const perfectMC = matchDiffCounts ? matchDiffCounts.perfectMatchCount : NaN // 3
@@ -145,7 +145,7 @@ export const generateIndicators = (
     calculatePartialMatchPercentage,
     matchDiffCounts,
     [4],
-    showIndexes
+    calcIndicatorIndexes
   )
 
   // 5 VED+TED
@@ -153,7 +153,7 @@ export const generateIndicators = (
     calculateValueEditDistancePlusTED,
     [X, Y],
     [5],
-    showIndexes
+    calcIndicatorIndexes
   )
 
   // 6 TED by Tree
@@ -161,7 +161,7 @@ export const generateIndicators = (
     getDiffsDiffsByTree,
     [X.diffs, Y.diffs],
     [6],
-    showIndexes
+    calcIndicatorIndexes
   )
   const diffTEDbyTree = diffsDiffsByTree ? diffsDiffsByTree.length : NaN
 
@@ -170,10 +170,10 @@ export const generateIndicators = (
     calculateValueEditDistancePlusTEDbyTree,
     [X, Y],
     [7],
-    showIndexes
+    calcIndicatorIndexes
   )
 
-  const values: Indicator['values'] = [
+  const allValues: Indicator['values'] = [
     { number: diffTED, diffs: diffsDiffs },
     { number: bcpTED, diffs: diffsWithBcpDiffs },
     { number: partialMC },
@@ -202,10 +202,14 @@ export const generateIndicators = (
     },
   ]
 
-  const indicator: Indicator = {
-    names: getUsedIndicatorNames(showIndexes),
-    values: values.filter((_, i) => showIndexes.some((si) => si === i)),
-  }
+  const names = allIndicatorNames.filter((_, i1) =>
+    calcIndicatorIndexes.some((i2) => i1 === i2)
+  )
+  const values = allValues.filter((_, i1) =>
+    calcIndicatorIndexes.some((i2) => i1 === i2)
+  )
+
+  const indicator: Indicator = { names, values }
   return indicator
 }
 
@@ -225,7 +229,6 @@ const calculateValueEditDistancePlusTED = (
 
   const valueEditDistance = calculateValueEditDistance(valuesX, valuesY)
   const diffsDiffs = justDiff(diffsX, diffsY)
-  console.log('diffsDiffs', diffsDiffs)
   const withoutValueTED = diffsDiffs.length
   const weightValue = 1
   const weightTree = 1
@@ -241,9 +244,10 @@ const calculateValueEditDistancePlusTEDbyTree = (
   const { values: valuesY, diffsWV: diffsY } = getValuesAndDiffsWithoutValue(Y)
 
   const valueEditDistance = calculateValueEditDistance(valuesX, valuesY)
-  // console.log('diffsPath', diffsToPathObj(diffsX), diffsX)
-  const diffsDiffs = justDiff(diffsToPathObj(diffsX), diffsToPathObj(diffsY))
-  console.log('diffsDiffs by Tree', diffsDiffs)
+  const diffsDiffs = justDiff(
+    diffsToPathObj(diffsX, true),
+    diffsToPathObj(diffsY, true)
+  )
   const withoutValueTED = diffsDiffs.length
   const weightValue = 1
   const weightTree = 1
@@ -294,26 +298,36 @@ const diffsToObj = (diffs: Diffs): DiffsByOperation => {
   return obj
 }
 
-const diffsToPathObj = (diffs: Diffs): DiffsPathByOperation => {
-  const add = pathToPathObj(diffs.filter((diff) => diff.op === 'add'))
-  const remove = pathToPathObj(diffs.filter((diff) => diff.op === 'remove'))
-  const replace = pathToPathObj(diffs.filter((diff) => diff.op === 'replace'))
+const diffsToPathObj = (
+  diffs: Diffs,
+  isValue: boolean
+): DiffsPathByOperation => {
+  const add = pathToPathObj(
+    diffs.filter((diff) => diff.op === 'add'),
+    isValue
+  )
+  const remove = pathToPathObj(
+    diffs.filter((diff) => diff.op === 'remove'),
+    isValue
+  )
+  const replace = pathToPathObj(
+    diffs.filter((diff) => diff.op === 'replace'),
+    isValue
+  )
   return { add, remove, replace }
 }
 
-const pathToPathObj = (diffs: Diffs): newRootElement => {
+const pathToPathObj = (diffs: Diffs, isValue: boolean): newRootElement => {
   const output = {} as newRootElement
   let current = {} as any
-  const pathsList = diffs.map((diff) => {
-    return diff.path
-  })
 
-  for (const path of pathsList) {
+  for (let i = 0; i < diffs.length; i++) {
+    const path = diffs[i].path
     current = output
     for (const segment of path) {
       if (segment.toString() !== '') {
         if (!(segment in current)) {
-          current[segment] = {}
+          current[segment] = isValue ? { value: diffs[i].value } : {}
         }
         current = current[segment]
       }
@@ -446,7 +460,6 @@ export const generateEventFiringElements = async (
   const BHtml = BEventFiringElement
     ? ((await getTextHtml(BEventFiringElement)) as string)
     : null
-  console.log(AHtml, BHtml)
   return [AHtml, BHtml]
 }
 

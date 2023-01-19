@@ -1,55 +1,127 @@
 import { cloneDeep } from 'lodash'
 import { HistoryAndFileData } from '~/types/history'
-import { CombinationWithIndicator } from './type'
+import {
+  alphabetToGroup,
+  changeToTejunNumber,
+  fileNameToAlphabet,
+} from '~/utils/converters'
+import { CombinationWithIndicator, Group, MatchingPareData } from './type'
 
 export class Matching {
   constructor(useIndicatorName: string) {
     Matching.useIndicatorName = useIndicatorName
+    Matching.cacheIndicatorIndex = 0
     Matching.matchingArr = []
     Matching.XeventIdArr = []
     Matching.XIndexArr = []
     Matching.YeventIdArr = []
     Matching.YIndexArr = []
-    Matching.cacheIndex = 0
-    Matching.prevIndicatorValue = 0
+    Matching.prevArrIndicatorValue = null
+    Matching.correctCount = 0
+    Matching.allCount = 0
   }
 
   static useIndicatorName: string = ''
   static matchingArr: CombinationWithIndicator[] = []
+  static cacheIndicatorIndex: number = 0
   static XeventIdArr: string[] = []
   static XIndexArr: number[] = []
   static YeventIdArr: string[] = []
   static YIndexArr: number[] = []
-  static prevIndicatorValue: number = 0
-  static cacheIndex: number | null = null
+  static prevArrIndicatorValue: number | null = null
+  static correctCount: number = 0
+  static allCount: number = 0
 
   minimumCostBipartiteMatching = (
     combinationWithIndicators: CombinationWithIndicator[]
-  ): CombinationWithIndicator[] => {
+  ): MatchingPareData => {
     const sortedArr = Matching.sortCombinationsByIndicator(
       combinationWithIndicators
+    )
+
+    Matching.saveCacheIndicatorIndex(
+      combinationWithIndicators[0],
+      Matching.useIndicatorName
     )
 
     for (let i = 0; i < sortedArr.length; i++) {
       const comb = sortedArr[i]
       const [histFileX, histFileY] = comb.combination
       if (Matching.isAdoptMatching(histFileX, histFileY)) {
-        const judge: boolean | undefined = histFileX.index === histFileY.index
+        const judge = Matching.judge(histFileX, histFileY)
         const ableToJudge: boolean | undefined = true
         const adoptedComb = { ...comb, judge, ableToJudge }
         Matching.matchingArr.push(adoptedComb)
         Matching.pushArrAddedId(comb)
+        Matching.allCount++
+        if (judge) {
+          Matching.correctCount++
+        }
       }
     }
-    return Matching.matchingArr
+    Matching.prevArrIndicatorValue = null
+    return {
+      matchings: Matching.matchingArr,
+      allCount: Matching.allCount,
+      correctCount: Matching.correctCount,
+    }
+  }
+
+  // static sameIndicatorValueCount = (arr: CombinationWithIndicator[]) => {
+  //   const indicatorArr = arr.map(
+  //     (combi) => combi.indicator.values[Matching.indicatorIndex].number
+  //   )
+  //   var count = {}
+
+  //   for (var i = 0; i < indicatorArr.length; i++) {
+  //     const number = indicatorArr[i]
+  //     count[number] = (count[number] || 0) + 1
+  //   }
+
+  //   console.log(count)
+  //   return s.size != arr.length
+  // }
+
+  // static isNeedReMatching = (arr: CombinationWithIndicator[]) => {
+  // }
+
+  static judge = (X: HistoryAndFileData, Y: HistoryAndFileData): boolean => {
+    const nameAndOpNumX = fileNameToAlphabet(X.fileName).split('_')
+    const nameAndOpNumY = fileNameToAlphabet(Y.fileName).split('_')
+    const arr = [...nameAndOpNumX, ...nameAndOpNumY]
+
+    const group = alphabetToGroup(nameAndOpNumX[0])
+    if (!group) {
+      alert(
+        `error! can't judge matching. ${nameAndOpNumX.join(
+          '_'
+        )}, ${nameAndOpNumY.join('_')}`
+      )
+      return false
+    }
+
+    return Matching.judgeByGroup(arr, X.index, Y.index, group)
+  }
+
+  static judgeByGroup = (
+    nameAndOpNumArr: string[],
+    x: number,
+    y: number,
+    group: Group
+  ): boolean => {
+    const [_nameX, opNumX, _nameY, opNumY] = nameAndOpNumArr
+
+    const tejunNumberX = changeToTejunNumber(opNumX, x, group)
+    const tejunNumberY = changeToTejunNumber(opNumY, y, group)
+    return tejunNumberX === tejunNumberY
   }
 
   static sortCombinationsByIndicator = (
     combinationWithIndicators: CombinationWithIndicator[]
   ) => {
-    const indicatorName = Matching.useIndicatorName
     const sortedArr = cloneDeep(combinationWithIndicators).sort((a, b) => {
-      const index = Matching.getIndex(a, indicatorName)
+      const index = Matching.cacheIndicatorIndex
+
       const ad = a.indicator.values[index].number
       const bd = b.indicator.values[index].number
       return ad === bd ? 0 : ad < bd ? -1 : 1
@@ -57,20 +129,32 @@ export class Matching {
     return sortedArr
   }
 
-  static getIndex = (comb: CombinationWithIndicator, indicatorName: string) => {
-    if (Matching.cacheIndex !== null) return Matching.cacheIndex
+  static saveCacheIndicatorIndex = (
+    comb: CombinationWithIndicator,
+    indicatorName: string
+  ) => {
+    if (Matching.cacheIndicatorIndex !== 0) return
     const index = comb.indicator.names.findIndex(
       (name) => name === indicatorName
     )
-    return index === -1 ? 0 : index
+    if (index !== -1) {
+      Matching.cacheIndicatorIndex = index
+      return
+    } else {
+      console.error(
+        'Indicator index can not found in combination by indicator name',
+        comb.indicator.names,
+        indicatorName
+      )
+    }
   }
 
   static pushArrAddedId = (comb: CombinationWithIndicator) => {
     const [histFileX, histFileY] = comb.combination
-    const index = Matching.getIndex(comb, Matching.useIndicatorName)
+    const index = Matching.cacheIndicatorIndex
     const isSameIndicatorToPrev =
-      Matching.prevIndicatorValue === comb.indicator.values[index].number
-    Matching.prevIndicatorValue = comb.indicator.values[index].number
+      Matching.prevArrIndicatorValue === comb.indicator.values[index].number
+    Matching.prevArrIndicatorValue = comb.indicator.values[index].number
 
     if (!isSameIndicatorToPrev) {
       Matching.XeventIdArr.push(histFileX.history.eventInfo.eventId)
@@ -85,7 +169,7 @@ export class Matching {
   static updatePrevJudgement = (index: number) => {
     const updateIndex = Matching.matchingArr.findIndex(
       (match) =>
-        match.indicator.values[index].number === Matching.prevIndicatorValue
+        match.indicator.values[index].number === Matching.prevArrIndicatorValue
     )
     const ableToJudge: boolean | undefined = false
     Matching.matchingArr[updateIndex] = {
