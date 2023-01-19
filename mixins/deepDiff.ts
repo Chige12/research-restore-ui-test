@@ -186,7 +186,7 @@ export default defineComponent({
         fromAndToHastHistories: state.fromAndToHastHistories,
         allElementStylesPerDiff: state.allElementStylesPerDiff,
       }
-      const name = `Histories${pathName}`
+      const name = `diffHistories${pathName}`
       saveJsonFile(obj, name)
     }
   },

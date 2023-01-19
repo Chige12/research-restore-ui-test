@@ -12,8 +12,8 @@
             </v-col>
             <v-col cols="3">
               <v-select
-                v-model="state.useIndicatorName"
-                :items="state.usedIndicatorNames"
+                v-model="state.calcIndicatorName"
+                :items="state.indicatorNameSelections"
                 label="Select Indicator"
               ></v-select>
             </v-col>
@@ -21,22 +21,27 @@
               <v-btn class="mb-8" @click="guessCombination" fill color="primary" elevation="0">guess comvination</v-btn>
             </v-col>
           </v-row>
+          
+          <p> 全マッチ数: {{state.allMatchCount}}, 正: {{state.correctMatchCount}}, 正答率: {{state.correctMatchCount / state.allMatchCount * 100}} %</p>
           <div class="mb-12"
             v-for="(match, m_key) in state.matchingsByFiles"
             :key="`match-${m_key}`"
           >
             <v-row>
-              <v-col cols="6">
+              <v-col cols="4">
                 <h4>
                   X: {{ fileNameToAlphabet(match.fileNameX) }} |
                   {{ match.fileNameX }}
                 </h4>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="4">
                 <h4>
                   Y: {{ fileNameToAlphabet(match.fileNameY) }} |
                   {{ match.fileNameY }}
                 </h4>
+              </v-col>
+              <v-col cols="3">
+                <p>正答率: {{ match.correctRate }}%</p>
               </v-col>
             </v-row>
 
@@ -48,13 +53,15 @@
                     <th v-if="!state.isShow" class="text-left">Y</th>
                     <th v-if="state.isShow" class="text-left">bit</th>
                     <th v-if="state.isShow" class="text-left">bit X</th>
+                    <th v-if="state.isShow" class="text-left">bit Y</th>
                     <th v-if="state.isShow" class="text-left">name X</th>
+                     <th v-if="state.isShow" class="text-left">name Y</th>
                     <th class="text-left">index X</th>
                     <th class="text-left">index Y</th>
-                    <th v-if="state.isShow" class="text-left">name Y</th>
-                    <th v-if="state.isShow" class="text-left">bit Y</th>
+                    <th class="text-left">操作手順X</th>
+                    <th class="text-left">操作手順Y</th>
                     <th v-if="state.isShow" class="text-left">Button</th>
-                    <th class="text-left" v-for="(name, inNa_Key) in useIndicatorNameList" :key="`inNa-${inNa_Key}`">{{name}}</th>
+                    <th class="text-left">{{state.calcIndicatorName}}</th>
                     <th class="text-left">正誤</th>
                     <th class="text-left">判定</th>
                   </tr>
@@ -76,11 +83,15 @@
                     <td v-if="!state.isShow">{{ fileNameToAlphabet(match.combination[0].fileName) }}</td>
                     <td v-if="!state.isShow">{{ fileNameToAlphabet(match.combination[1].fileName) }}</td>
                     <td v-if="state.isShow">{{ match.combination[0].bitId }}</td>
-                    <td v-if="state.isShow">{{ match.combination[0].fileName.slice(14, -5) }}</td>
-                    <td>{{ match.combination[0].index }}</td>
-                    <td>{{ match.combination[1].index }}</td>
-                    <td v-if="state.isShow">{{ match.combination[1].fileName.slice(14, -5) }}</td>
                     <td v-if="state.isShow">{{ match.combination[1].bitId }}</td>
+                    <td v-if="state.isShow">{{ match.combination[0].fileName.slice(14, -5) }}</td>
+                    <td v-if="state.isShow">{{ match.combination[1].fileName.slice(14, -5) }}</td>
+                    <td v-if="state.isShow">{{ match.combination[0].index}}</td>
+                    <td v-if="state.isShow">{{ match.combination[1].index}}</td>
+                    <td v-if="!state.isShow">{{ `$${SOrT(match.combination[0])}_${match.combination[0].index}$` }}</td>
+                    <td v-if="!state.isShow">{{ `$${SOrT(match.combination[0])}_${match.combination[1].index}$` }}</td>
+                    <td>{{ changeToTejunNumberFromFileData(match.combination[0]) }}</td>
+                    <td>{{ changeToTejunNumberFromFileData(match.combination[1]) }}</td>
                     <td v-if="state.isShow">
                       <v-btn
                         @click="
@@ -160,10 +171,11 @@
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep'
 import { defineComponent } from 'vue'
-import { useHistoriesByFileStore } from '~/composables/globalState'
+import { useFileStore } from '~/composables/globalState'
 import {
   HistoriesByFile,
   HistoriesAndFileData,
+  HistoryAndFileData,
 } from '~/types/history'
 import {
   getAllEventHistories,
@@ -172,15 +184,17 @@ import {
   generateIndicators,
   getUsedIndicatorNames,
   addBitIdToHistory,
-  indicatorNames,
+  allIndicatorNames,
 } from '~/utils/checkDiffs/checkDiffsUtils'
 import {
   CombinationWithIndicator,
   MatchingsWithFileName,
+  MatchingsByFilesAndIndicator,
 } from '~/utils/guessCombination/type'
 import {
   Matching
 } from '~/utils/guessCombination/matchingClass'
+import { fileNameToAlphabet, alphabetToGroup, changeToTejunNumber } from '~/utils/converters'
 
 type FileCombination = {
   fileX: HistoriesAndFileData
@@ -190,9 +204,8 @@ type FileCombination = {
 type State = {
   isShow: boolean,
   file: HistoriesByFile
-  usedIndicatorNames: string[]
-  useIndicatorName: string
-  showIndexes: number[]
+  indicatorNameSelections: string[]
+  calcIndicatorName: string
   fileCombinations: FileCombination[]
   selectedFileA: string
   selectedFileB: string
@@ -203,18 +216,23 @@ type State = {
   indexNumber: number
   eventFiringElements: (string | null)[]
   matchingsByFiles: MatchingsWithFileName[]
+  allMatchCount: number
+  correctMatchCount: number
+  matchingsByFilesAndIndicator: MatchingsByFilesAndIndicator[]
 }
 
 export default defineComponent({
   setup() {
-    const { historiesByFile } = useHistoriesByFileStore()
+    const {state: historiesByFile } =
+      useFileStore<HistoriesByFile>('historiesByFile', [])
+    const { setState } =
+      useFileStore<MatchingsByFilesAndIndicator[]>('matchingsByFilesAndIndicator', [])
 
     const state = reactive<State>({
       isShow: true,
       file: [],
-      usedIndicatorNames: [],
-      useIndicatorName: 'VED+TED by Tree',
-      showIndexes: [0, 5, 6, 7],
+      calcIndicatorName: 'VED+TED by Tree',
+      indicatorNameSelections: [],
       fileCombinations: [],
       selectedFileA: '',
       selectedFileB: '',
@@ -225,15 +243,20 @@ export default defineComponent({
       indexNumber: 0,
       eventFiringElements: [null, null],
       matchingsByFiles: [],
+      allMatchCount: 0,
+      correctMatchCount: 0,
+      matchingsByFilesAndIndicator: [],
     })
+
+    const INDICATOR_INDEXES = [0, 5, 6, 7]
 
     onMounted(() => {
       const file = cloneDeep(historiesByFile.value)
       state.file = file
-
       state.fileCombinations = getFileCombination(state.file)
-      state.usedIndicatorNames = getUsedIndicatorNames(state.showIndexes)
-      state.showIndexes = [7]
+
+      // 選択肢を生成
+      state.indicatorNameSelections = getUsedIndicatorNames(INDICATOR_INDEXES)
       guessCombination()
     })
 
@@ -253,10 +276,6 @@ export default defineComponent({
       return value.sub ? value.sub : ''
     })
 
-    const useIndicatorNameList = computed(() => {
-      return [state.useIndicatorName]
-    })
-
     watchEffect(async () => {
       const index = state.indexNumber * 2
       if (state.matchingsByFiles.length === 0) return [null, null]
@@ -266,23 +285,53 @@ export default defineComponent({
       state.eventFiringElements = eventFiringElements
     })
 
-    watch(() => state.useIndicatorName, (next) => {
-      state.showIndexes = [indicatorNames.findIndex(name => name === next)]
+    watch(() => state.calcIndicatorName, (next) => {
       guessCombination()
     })
 
-    const guessCombination = () => {
+    const guessCombination = async () => {
+      const mbfai = state.matchingsByFilesAndIndicator.find(mbf => mbf.indicator === state.calcIndicatorName)
+      if (mbfai !== undefined) {
+        state.matchingsByFiles = mbfai.matchingsByFiles
+        return;
+      };
       // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
+      state.allMatchCount = 0
+      state.correctMatchCount = 0
       if (state.fileCombinations.length === 0) return
-      const matchingsByFiles = matchingsByTED(state.fileCombinations)
+      const matchingsByFiles = await matchingsByTED(state.fileCombinations)
+      console.log('sorting...')
       state.matchingsByFiles = sortMatchingsByFileName(matchingsByFiles)
+
+      pushToState(state.matchingsByFiles, state.calcIndicatorName)
+      console.log('finish guess')
     }
 
-    const matchingsByTED = (fileCombinations: FileCombination[]): MatchingsWithFileName[] => {
-      const matchingsByFiles: MatchingsWithFileName[] = fileCombinations.filter(fileCombination => {
+    const pushToState = (matchingsByFiles: MatchingsWithFileName[], indicator: string) => {
+      state.matchingsByFilesAndIndicator.push({ matchingsByFiles, indicator })
+      setState(state.matchingsByFilesAndIndicator)
+    }
+
+    const matchingsByTED = async (fileCombinations: FileCombination[]) => {
+      const filteredMatchingsByFiles = fileCombinations.filter(fileCombination => {
         const { fileX, fileY } = fileCombination
-        return fileX.fileName.split('-')[1] === fileY.fileName.split('-')[1]
-      }).map((fileCombination) => {
+        const isSameGroup = fileX.fileName.split('-')[1] === fileY.fileName.split('-')[1]
+        const isSameUI = fileNameToAlphabet(fileX.fileName).split('_')[0] === fileNameToAlphabet(fileY.fileName).split('_')[0]
+        return isSameGroup && !isSameUI
+      })
+      const matchingsByFiles = Promise.all(filteredMatchingsByFiles.map(async (fileCombination, index, arr) => {
+        const matchingsWithFileName = await generateMatchingsWithFileName(fileCombination)
+
+        state.allMatchCount = state.allMatchCount + matchingsWithFileName.allCount
+        state.correctMatchCount = state.correctMatchCount + matchingsWithFileName.correctCount
+        console.log(`finished calculation: file ${index+1} / ${arr.length}`)
+        return matchingsWithFileName
+      }))
+      return matchingsByFiles
+    }
+
+    const generateMatchingsWithFileName = (fileCombination: FileCombination ): Promise<MatchingsWithFileName> => {
+      return new Promise((resolve, reject) => {
         const { fileX, fileY } = fileCombination
         const fileXEventHistories = addBitIdToHistory(getAllEventHistories([fileX]), 0)
         const fileYEventHistories = addBitIdToHistory(getAllEventHistories([fileY]), fileXEventHistories.length)
@@ -290,28 +339,36 @@ export default defineComponent({
           fileXEventHistories,
           fileYEventHistories
         )
+        const calcIndicatorIndexByAll = allIndicatorNames.findIndex(name => name === state.calcIndicatorName)
         const combinationWithIndicators: CombinationWithIndicator[] =
           combinations.map((combination) => {
             const [X, Y] = combination
-            const indicator = generateIndicators(X.history, Y.history, state.showIndexes)
+            const indicator = generateIndicators(X.history, Y.history, [calcIndicatorIndexByAll])
             return { combination, indicator }
           })
-        const { minimumCostBipartiteMatching } = new Matching(state.useIndicatorName)
-        const matchings = minimumCostBipartiteMatching(combinationWithIndicators)
+        const { minimumCostBipartiteMatching } = new Matching(state.calcIndicatorName)
+        const { matchings, allCount, correctCount} = minimumCostBipartiteMatching(combinationWithIndicators)
+
+
+        const isNeedReMatching = matchings.some((m) => !m.ableToJudge)
+        if (isNeedReMatching) {
+
+        }
 
         const matchingsWithFileName: MatchingsWithFileName = {
           fileNameX: fileX.fileName,
           fileNameY: fileY.fileName,
           matchings,
+          allCount,
+          correctCount,
+          correctRate: correctCount / allCount * 100
         }
-        return matchingsWithFileName
-      })
-
-      return matchingsByFiles
+        return resolve(matchingsWithFileName)
+      });
     }
 
     const sortMatchingsByFileName = (matchingsByFiles: MatchingsWithFileName[]) => {
-      return cloneDeep(matchingsByFiles).sort((a, b) => {
+      return matchingsByFiles.slice().sort((a, b) => {
         const a1 = fileNameToAlphabet(a.fileNameX).toLowerCase()
         const a2 = fileNameToAlphabet(b.fileNameX).toLowerCase()
         const b1 = fileNameToAlphabet(a.fileNameY).toLowerCase()
@@ -348,35 +405,28 @@ export default defineComponent({
       return fileCombinations
     }
 
-    const fileNameToAlphabet = (fileName: string): string => {
-      switch (fileName) {
-        case 'diffHistories-signin-comp01.json':
-          return 'A'
-        case 'diffHistories-signin-comp02.json':
-          return 'B'
-        case 'diffHistories-signin-elementUI.json':
-          return 'C'
-        case 'diffHistories-signin-iView.json':
-          return 'D'
-        case 'diffHistories-signin-comp01-2.json':
-          return 'E'
-        case 'diffHistories-search-search01.json':
-          return 'E'
-        case 'diffHistories-search-search02.json':
-          return 'F'
-        default:
-          return fileName
-      }
+    const changeToTejunNumberFromFileData = (historyAndfileData: HistoryAndFileData) => {
+      const [ alphabet, opNum] = fileNameToAlphabet(historyAndfileData.fileName).split('_')
+      const group = alphabetToGroup(alphabet)
+      if (!group) return NaN
+      return changeToTejunNumber(opNum, historyAndfileData.index, group)
+    }
+
+    const SOrT = (historyAndfileData: HistoryAndFileData): string => {
+      const [ alphabet, _] = fileNameToAlphabet(historyAndfileData.fileName).split('_')
+      const isT = alphabet === 'E' || alphabet === 'F'
+      return isT ? 't' : 's'
     }
 
     return {
       state,
-      useIndicatorNameList,
       historiesByFile,
       indicatorTEDDiffs,
       indicatorTEDSubData,
       guessCombination,
       fileNameToAlphabet,
+      changeToTejunNumberFromFileData,
+      SOrT,
     }
   }
 })

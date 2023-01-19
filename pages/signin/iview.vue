@@ -60,7 +60,7 @@ export default Vue.extend({
           {
             type: 'string',
             min: 8,
-            message: 'The email length cannot be less than 8 bits',
+            message: 'Invalid e-mail.',
             trigger: 'change',
           },
         ],
@@ -73,7 +73,7 @@ export default Vue.extend({
           {
             type: 'string',
             min: 8,
-            message: 'The password length cannot be less than 8 bits',
+            message: 'Min 8 characters',
             trigger: 'change',
           },
         ],

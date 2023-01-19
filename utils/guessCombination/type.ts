@@ -12,4 +12,20 @@ export type MatchingsWithFileName = {
   fileNameX: string
   fileNameY: string
   matchings: CombinationWithIndicator[]
+  allCount: number
+  correctCount: number
+  correctRate: number
 }
+
+export type MatchingPareData = {
+  matchings: CombinationWithIndicator[]
+  allCount: number
+  correctCount: number
+}
+
+export type MatchingsByFilesAndIndicator = {
+  matchingsByFiles: MatchingsWithFileName[]
+  indicator: string
+}
+
+export type Group = 'signin' | 'table'

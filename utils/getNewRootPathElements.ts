@@ -90,11 +90,11 @@ export const getNewRootPathElements = (
   const newRootPathElements = generateNewRootPathElementsByArr(
     elementsDeleteChildArr
   )
-  const json = JSON.stringify(newRootPathElements, null, 4)
-  if (json.indexOf('brothers') !== -1) {
-    console.log(hast)
-    console.log(newRootPathElements)
-  }
+  // const json = JSON.stringify(newRootPathElements, null, 4)
+  // if (json.indexOf('brothers') !== -1) {
+  //   console.log(hast)
+  //   console.log(newRootPathElements)
+  // }
 
   return newRootPathElements
 }
@@ -109,6 +109,6 @@ export const getEventFiringElement = (
   const lastHastPath = index !== -1 ? path.slice(0, index - minus) : path
 
   const eventFiringHast: HastNode = get(cloneDeep(hast), lastHastPath)
-  console.log(eventFiringHast)
+  // console.log(eventFiringHast)
   return eventFiringHast
 }

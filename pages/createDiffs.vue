@@ -3,6 +3,7 @@
     <div>
       <v-btn @click="updateHistoriesByFile" outlined> update! </v-btn>
       <v-btn @click="createJsonFile" outlined>create Json File!</v-btn>
+      <v-btn v-if="storeHistoriesByFile.length > 0" to="guessCombination" fill color="primary" elevation="0">guess comvination</v-btn>
     </div>
     <div class="my-6" v-for="file in storeHistoriesByFile" :key="file.fileName">
       <h3>file {{ file.fileName }}</h3>
@@ -53,7 +54,7 @@
 <script lang="ts">
 import axios from 'axios'
 import { HastNode } from 'hast-util-from-dom/lib'
-import { defineComponent, reactive } from 'vue'
+import { defineComponent, reactive, Ref } from 'vue'
 import { diff as justDiff } from 'just-diff'
 import { getNewRootPathElements } from '~/utils/getNewRootPathElements'
 import { Diffs } from '~/types/diffs'
@@ -66,20 +67,22 @@ import {
 } from '~/types/history'
 import { JsonFile, JsonFiles } from '~/utils/jsonFilesType'
 import { saveJsonFile } from '~/utils/saveJsonFile'
-import { useHistoriesByFileStore } from '~/composables/globalState'
+import { useFileStore } from '~/composables/globalState'
 import { EventInfo } from '~/types/event'
 
 type State = {
   isExistJsonFile: boolean
+  historiesByFile: HistoriesByFile
 }
 
 export default defineComponent({
   setup() {
-    const { historiesByFile: storeHistoriesByFile, setHistoriesByFile } =
-      useHistoriesByFileStore()
+    const {state: storeHistoriesByFile, setState: setHistoriesByFile } =
+      useFileStore<HistoriesByFile>('historiesByFile', [])
 
     const state = reactive<State>({
       isExistJsonFile: false,
+      historiesByFile: []
     })
 
     onMounted(() => {
