@@ -259,7 +259,7 @@ export default defineComponent({
 
       // 選択肢を生成
       state.indicatorNameSelections = getUsedIndicatorNames(INDICATOR_INDEXES)
-      guessCombination()
+      cacheGuessCombination()
     })
 
     const indicatorTEDDiffs = computed(() => {
@@ -288,15 +288,19 @@ export default defineComponent({
     })
 
     watch(() => state.calcIndicatorName, () => {
-      guessCombination()
+      cacheGuessCombination()
     })
 
-    const guessCombination = async () => {
+    const cacheGuessCombination = async () => {
       const mbfai = state.matchingsByFilesAndIndicator.find(mbf => mbf.indicator === state.calcIndicatorName)
       if (mbfai !== undefined) {
         state.matchingsByFiles = mbfai.matchingsByFiles
         return;
       };
+      await guessCombination()
+    }
+
+    const guessCombination = async () => {
       // jsonファイルAとBがもつ、それぞれの操作対象のペアをマッチングする
       state.allMatchCount = 0
       state.correctMatchCount = 0
@@ -304,7 +308,6 @@ export default defineComponent({
       const matchingsByFiles = await matchingsByTED(state.fileCombinations)
       console.log('sorting...')
       state.matchingsByFiles = sortMatchingsByFileName(matchingsByFiles)
-
       pushToState(state.matchingsByFiles, state.calcIndicatorName)
       console.log('finish guess')
     }
