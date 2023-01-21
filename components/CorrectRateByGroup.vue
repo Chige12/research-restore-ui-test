@@ -67,11 +67,12 @@ export default defineComponent({
       }
     })
 
-    const getStrage = () => {
+    const getStrage = (): CorrectRateData[] => {
       const json = localStorage.getItem('correctRatesByGroup')
-      if (!json) return
-      console.log(json)
-      return JSON.parse(json)
+      if (!json) return []
+      const arr = JSON.parse(json)
+      if (!Array.isArray(arr)) return []
+      return arr 
     }
 
     const saveStrage = () => {

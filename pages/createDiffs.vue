@@ -91,9 +91,11 @@ export default defineComponent({
 
     const updateHistoriesByFile = async () => {
       const jsonFiles = await getJsonFiles()
+      console.log('get json!')
       if (!jsonFiles) return
 
-      const historiesByFile = createHistoriesByFile(jsonFiles)
+      const historiesByFile = await createHistoriesByFile(jsonFiles)
+      console.log('finish create histories!')
       setHistoriesByFile(historiesByFile)
     }
 
@@ -119,36 +121,36 @@ export default defineComponent({
       )
     }
 
-    const createHistoriesByFile = (jsonFiles: JsonFiles): HistoriesByFile => {
-      return jsonFiles.map((file, index) => {
+    const createHistoriesByFile = async (jsonFiles: JsonFiles): Promise<HistoriesByFile> => {
+      return await Promise.all(jsonFiles.map(async (file, index) => {
         const { fromAndToHastHistories } = file.data
-        const histories = createHistories(fromAndToHastHistories)
+        const histories = await createHistories(fromAndToHastHistories)
         const historiesANdFileData: HistoriesAndFileData = {
           fileName: file.name,
           index,
           histories,
         }
         return historiesANdFileData
-      })
+      }))
     }
 
-    const createHistories = (
+    const createHistories = async (
       fromAndToHastHistories: FromAndToHastHistory[]
-    ): EventHistory[] => {
-      let histories = []
-      for (let i = 0; i < fromAndToHastHistories.length; i++) {
-        const { to, from } = fromAndToHastHistories[i]
-        if (!to || !from) continue
+    ): Promise<EventHistory[]> => {
+      const historiesIncludeUndefined = await Promise.all(fromAndToHastHistories.map(async (x)=>{
+        const { to, from } = x
+        if (!to || !from) return
 
         const { hast: toHast, eventInfo } = to
         const { hast: fromHast } = from
-        if (!eventInfo) continue
+        if (!eventInfo) return
 
         const id = eventInfo.eventId
         if (!id) console.log('ID is noting!', id)
-        const history = createHistory(toHast, fromHast, eventInfo)
-        histories.push(history)
-      }
+        const history = await createHistory(toHast, fromHast, eventInfo)
+        return history
+      }))
+      const histories = historiesIncludeUndefined.filter((x) => typeof x !== 'undefined') as EventHistory[]
       return histories
     }
 
@@ -156,26 +158,28 @@ export default defineComponent({
       toHast: HastNode,
       fromHast: HastNode,
       eventInfo: EventInfo
-    ): EventHistory => {
-      const toNewRootHast = getNewRootPathElements(toHast, eventInfo.eventId)
-      const fromNewRootHast = getNewRootPathElements(
-        fromHast,
-        eventInfo.eventId
-      )
-      const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
-      const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(
-        diffs,
-        toNewRootHast
-      )
-      const history = {
-        oldFormat: { to: toHast },
-        eventInfo,
-        from: fromNewRootHast,
-        to: toNewRootHast,
-        diffs,
-        diffsWithbreadcrumbsPaths,
-      }
-      return history
+    ): Promise<EventHistory> => {
+      return new Promise((resolve, _reject) => {
+        const toNewRootHast = getNewRootPathElements(toHast, eventInfo.eventId)
+        const fromNewRootHast = getNewRootPathElements(
+          fromHast,
+          eventInfo.eventId
+        )
+        const diffs: Diffs = justDiff(toNewRootHast, fromNewRootHast)
+        const diffsWithbreadcrumbsPaths = createDiffsWithBreadcrumbsPath(
+          diffs,
+          toNewRootHast
+        )
+        const history = {
+          oldFormat: { to: toHast },
+          eventInfo,
+          from: fromNewRootHast,
+          to: toNewRootHast,
+          diffs,
+          diffsWithbreadcrumbsPaths,
+        }
+        return resolve(history)
+      })
     }
 
     const createJsonFile = () => {
