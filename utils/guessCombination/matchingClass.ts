@@ -28,7 +28,7 @@ export class Matching {
   static correctCount: number = 0
   static allCount: number = 0
 
-  minimumCostBipartiteMatching = (
+  generateMatchingByAlgorism = (
     combinationWithIndicators: CombinationWithIndicator[]
   ): MatchingPareData => {
     Matching.saveCacheIndicatorIndex(

@@ -7,7 +7,7 @@ export class MatchingTwo extends Matching {
     super(useIndicatorName)
   }
 
-  minimumCostBipartiteMatching = (
+  generateMatchingByAlgorism = (
     combinationWithIndicators: CombinationWithIndicator[]
   ): MatchingPareData => {
     MatchingTwo.saveCacheIndicatorIndex(

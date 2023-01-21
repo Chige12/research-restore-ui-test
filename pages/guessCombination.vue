@@ -381,13 +381,13 @@ export default defineComponent({
 
     const generateMatching = (matchings: CombinationWithIndicator[]): MatchingPareData => {
       if (state.matchingAlgorithm === 'AdoptInAscending') {
-        const { minimumCostBipartiteMatching } = new Matching(state.calcIndicatorName)
-        const pairData = minimumCostBipartiteMatching(matchings)
+        const { generateMatchingByAlgorism } = new Matching(state.calcIndicatorName)
+        const pairData = generateMatchingByAlgorism(matchings)
         return pairData
       }
       if (state.matchingAlgorithm === 'minimumWeightBipartiteMatch') {
-        const { minimumCostBipartiteMatching } = new MatchingTwo(state.calcIndicatorName)
-        const pairData = minimumCostBipartiteMatching(matchings)
+        const { generateMatchingByAlgorism } = new MatchingTwo(state.calcIndicatorName)
+        const pairData = generateMatchingByAlgorism(matchings)
         return pairData
       }
       return {
