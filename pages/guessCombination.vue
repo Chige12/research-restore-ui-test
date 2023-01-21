@@ -191,16 +191,27 @@ import {
   CombinationWithIndicator,
   MatchingsWithFileName,
   MatchingsByFilesAndIndicator,
+  MatchingPareData,
 } from '~/utils/guessCombination/type'
 import {
   Matching
 } from '~/utils/guessCombination/matchingClass'
+import {
+  MatchingTwo
+} from '~/utils/guessCombination/matchingClass2'
 import { fileNameToAlphabet, alphabetToGroup, changeToTejunNumber } from '~/utils/converters'
 
 type FileCombination = {
   fileX: HistoriesAndFileData
   fileY: HistoriesAndFileData
 }
+
+const MATCHINGALGORITHMS = [
+  'AdoptInAscending',
+  'minimumWeightBipartiteMatch'
+]
+
+type MatchingAlgorithm = 'AdoptInAscending' | 'minimumWeightBipartiteMatch'
 
 type State = {
   isShow: boolean,
@@ -220,6 +231,7 @@ type State = {
   allMatchCount: number
   correctMatchCount: number
   matchingsByFilesAndIndicator: MatchingsByFilesAndIndicator[]
+  matchingAlgorithm: MatchingAlgorithm
 }
 
 export default defineComponent({
@@ -247,6 +259,7 @@ export default defineComponent({
       allMatchCount: 0,
       correctMatchCount: 0,
       matchingsByFilesAndIndicator: [],
+      matchingAlgorithm: 'AdoptInAscending' 
     })
 
     const INDICATOR_INDEXES = [0, 5, 6, 7]
@@ -351,25 +364,56 @@ export default defineComponent({
             const indicator = generateIndicators(X.history, Y.history, [calcIndicatorIndexByAll])
             return { combination, indicator }
           })
-        const { minimumCostBipartiteMatching } = new Matching(state.calcIndicatorName)
-        const { matchings, allCount, correctCount} = minimumCostBipartiteMatching(combinationWithIndicators)
-
-
-        const isNeedReMatching = matchings.some((m) => !m.ableToJudge)
-        if (isNeedReMatching) {
-
-        }
+        const { matchings, allCount, correctCount } = generateMatching(combinationWithIndicators)
+        const newMatchings = reMatchings(matchings)
 
         const matchingsWithFileName: MatchingsWithFileName = {
           fileNameX: fileX.fileName,
           fileNameY: fileY.fileName,
-          matchings,
+          matchings: newMatchings,
           allCount,
           correctCount,
           correctRate: correctCount / allCount * 100
         }
         return resolve(matchingsWithFileName)
       });
+    }
+
+    const generateMatching = (matchings: CombinationWithIndicator[]): MatchingPareData => {
+      if (state.matchingAlgorithm === 'AdoptInAscending') {
+        const { minimumCostBipartiteMatching } = new Matching(state.calcIndicatorName)
+        const pairData = minimumCostBipartiteMatching(matchings)
+        return pairData
+      }
+      if (state.matchingAlgorithm === 'minimumWeightBipartiteMatch') {
+        const { minimumCostBipartiteMatching } = new MatchingTwo(state.calcIndicatorName)
+        const pairData = minimumCostBipartiteMatching(matchings)
+        return pairData
+      }
+      return {
+        matchings: matchings,
+        allCount: 0,
+        correctCount: 0
+      }
+    }
+
+    const reMatchings = (matchings: CombinationWithIndicator[] ): CombinationWithIndicator[] => {
+      const isNotAbleToJudge = matchings.some((m) => !m.ableToJudge)
+      if (!isNotAbleToJudge) return matchings.map(x => ({ ...x, ableToJudge: true }))
+
+      const rematchingIndexes = matchings.reduce((a: number[], e, i) => {
+        if (!e.ableToJudge)
+            a.push(i);
+        return a;
+      }, []);  
+      const isLastIndexAbleToJudge = rematchingIndexes[rematchingIndexes.length - 1] === matchings.length - 1
+      if (isLastIndexAbleToJudge) return matchings.map(x => ({ ...x, ableToJudge: true }))
+
+      return generateReMatchings(matchings, rematchingIndexes)
+    }
+
+    const generateReMatchings = (matchings: CombinationWithIndicator[], rematchingIndexes: number[] ): CombinationWithIndicator[] => {
+      return matchings
     }
 
     const sortMatchingsByFileName = (matchingsByFiles: MatchingsWithFileName[]) => {

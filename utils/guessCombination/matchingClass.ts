@@ -13,9 +13,7 @@ export class Matching {
     Matching.cacheIndicatorIndex = 0
     Matching.matchingArr = []
     Matching.XeventIdArr = []
-    Matching.XIndexArr = []
     Matching.YeventIdArr = []
-    Matching.YIndexArr = []
     Matching.prevArrIndicatorValue = null
     Matching.correctCount = 0
     Matching.allCount = 0
@@ -25,9 +23,7 @@ export class Matching {
   static matchingArr: CombinationWithIndicator[] = []
   static cacheIndicatorIndex: number = 0
   static XeventIdArr: string[] = []
-  static XIndexArr: number[] = []
   static YeventIdArr: string[] = []
-  static YIndexArr: number[] = []
   static prevArrIndicatorValue: number | null = null
   static correctCount: number = 0
   static allCount: number = 0
@@ -35,13 +31,13 @@ export class Matching {
   minimumCostBipartiteMatching = (
     combinationWithIndicators: CombinationWithIndicator[]
   ): MatchingPareData => {
-    const sortedArr = Matching.sortCombinationsByIndicator(
-      combinationWithIndicators
-    )
-
     Matching.saveCacheIndicatorIndex(
       combinationWithIndicators[0],
       Matching.useIndicatorName
+    )
+
+    const sortedArr = Matching.sortCombinationsByIndicator(
+      combinationWithIndicators
     )
 
     for (let i = 0; i < sortedArr.length; i++) {
@@ -159,8 +155,6 @@ export class Matching {
     if (!isSameIndicatorToPrev) {
       Matching.XeventIdArr.push(histFileX.history.eventInfo.eventId)
       Matching.YeventIdArr.push(histFileY.history.eventInfo.eventId)
-      Matching.XIndexArr.push(histFileX.index)
-      Matching.YIndexArr.push(histFileY.index)
     } else {
       Matching.updatePrevJudgement(index)
     }

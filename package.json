@@ -24,6 +24,7 @@
     "hast-util-to-dom": "^3.1.0",
     "just-diff": "^5.0.1",
     "lodash": "^4.17.21",
+    "min-cost-flow": "^2.1.0",
     "nuxt-edge": "latest",
     "view-design": "^4.7.0",
     "vue": "^2.6.14",
