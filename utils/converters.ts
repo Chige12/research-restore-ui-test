@@ -1,3 +1,4 @@
+import { HistoryAndFileData } from '~/types/history'
 import { Group } from './guessCombination/type'
 
 export const fileNameToAlphabet = (fileName: string): string => {
@@ -48,7 +49,7 @@ export const fileNameToAlphabet = (fileName: string): string => {
 }
 
 export const changeToTejunNumber = (
-  opNum: string,
+  opNum: number,
   index: number,
   group: Group
 ): number => {
@@ -67,7 +68,7 @@ export const changeToTejunNumber = (
   ]
 
   const changeCommandList = group === 'signin' ? signin : table
-  const tejunNumber = changeCommandList[Number(opNum) - 1][index]
+  const tejunNumber = changeCommandList[opNum - 1][index]
   return tejunNumber - 1
 }
 
@@ -102,4 +103,58 @@ export const fileNameToAlphabetAndOpAndGroup = (
     opNum: Number(opNum),
     group,
   }
+}
+
+export const indexToTarget = (
+  opNum: number,
+  index: number,
+  group: Group
+): string | null => {
+  const tejunNumber = changeToTejunNumber(opNum, index, group)
+  if (group === 'signin') {
+    switch (tejunNumber) {
+      case 0:
+      case 1:
+        return 'email'
+      case 2:
+      case 3:
+        return 'password'
+      default:
+        return null
+    }
+  }
+  if (group === 'table') {
+    switch (tejunNumber) {
+      case 0:
+      case 1:
+      case 2:
+        return 'search'
+      case 3:
+        return 'selector'
+      case 4:
+        return 'selectorItem'
+      case 5:
+        return 'nextPage'
+      case 6:
+        return 'prevPage'
+      default:
+        return null
+    }
+  }
+  return null
+}
+
+export const fileXYToTargetXY = (
+  comb: HistoryAndFileData[]
+): (string | null)[] => {
+  const [fileX, fileY] = comb
+  const { opNum: opNumX, group } = fileNameToAlphabetAndOpAndGroup(
+    fileX.fileName
+  )
+  const { opNum: opNumY } = fileNameToAlphabetAndOpAndGroup(fileY.fileName)
+  if (!group) console.error('Error: group is undefined')
+  const targetX = indexToTarget(opNumX, fileX.index, group ? group : 'table')
+  const targetY = indexToTarget(opNumY, fileY.index, group ? group : 'table')
+  if (!targetX || !targetY) console.error('taget is null', targetX, targetY)
+  return [targetX, targetY]
 }

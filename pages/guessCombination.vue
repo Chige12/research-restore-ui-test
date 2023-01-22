@@ -263,7 +263,7 @@ export default defineComponent({
       allMatchCount: 0,
       correctMatchCount: 0,
       matchingsByFilesAndIndicator: [],
-      matchingAlgorithm: 'AdoptInAscendingForDuplicate' 
+      matchingAlgorithm: 'AdoptInAscending' 
     })
 
     const INDICATOR_INDEXES = [0, 5, 6, 7]
@@ -385,7 +385,7 @@ export default defineComponent({
     const generateMatching = (matchings: CombinationWithIndicator[]): MatchingPareData => {
       if (state.matchingAlgorithm === 'AdoptInAscending') {
         const { generateMatchingByAlgorism } = new Matching(state.calcIndicatorName)
-        const pairData = generateMatchingByAlgorism(matchings)
+        const pairData = generateMatchingByAlgorism(matchings, true)
         return pairData
       }
       if (state.matchingAlgorithm === 'MinimumWeightBipartiteMatch') {
@@ -399,7 +399,7 @@ export default defineComponent({
         return pairData
       }
       return {
-        matchings: matchings,
+        matchings,
         allCount: 0,
         correctCount: 0
       }
@@ -447,7 +447,7 @@ export default defineComponent({
       const [ alphabet, opNum] = fileNameToAlphabet(historyAndfileData.fileName).split('_')
       const group = alphabetToGroup(alphabet)
       if (!group) return NaN
-      return changeToTejunNumber(opNum, historyAndfileData.index, group)
+      return changeToTejunNumber(Number(opNum), historyAndfileData.index, group)
     }
 
     const SOrT = (historyAndfileData: HistoryAndFileData): string => {

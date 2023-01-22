@@ -4,6 +4,7 @@ import {
   alphabetToGroup,
   changeToTejunNumber,
   fileNameToAlphabet,
+  fileXYToTargetXY,
 } from '~/utils/converters'
 import { CombinationWithIndicator, Group, MatchingPareData } from './type'
 
@@ -12,8 +13,8 @@ export class Matching {
     Matching.useIndicatorName = useIndicatorName
     Matching.cacheIndicatorIndex = 0
     Matching.matchingArr = []
-    Matching.fixedOperationTargetIdsX = []
-    Matching.fixedOperationTargetIdsY = []
+    Matching.fixedOperationTargetsX = []
+    Matching.fixedOperationTargetsY = []
     Matching.fixedOperationIndexesX = []
     Matching.fixedOperationIndexesY = []
     Matching.prevIndicatorValue = null
@@ -24,8 +25,8 @@ export class Matching {
   static useIndicatorName: string = ''
   static matchingArr: CombinationWithIndicator[] = []
   static cacheIndicatorIndex: number = 0
-  static fixedOperationTargetIdsX: string[] = []
-  static fixedOperationTargetIdsY: string[] = []
+  static fixedOperationTargetsX: string[] = []
+  static fixedOperationTargetsY: string[] = []
   static fixedOperationIndexesX: number[] = []
   static fixedOperationIndexesY: number[] = []
   static prevIndicatorValue: number | null = null
@@ -33,7 +34,8 @@ export class Matching {
   static allCount: number = 0
 
   generateMatchingByAlgorism = (
-    combinationWithIndicators: CombinationWithIndicator[]
+    combinationWithIndicators: CombinationWithIndicator[],
+    isFixedSameValue?: boolean
   ): MatchingPareData => {
     Matching.saveCacheIndicatorIndex(
       combinationWithIndicators[0],
@@ -59,25 +61,6 @@ export class Matching {
         nowIndicatorValue === Matching.prevIndicatorValue
       const isFirst = i === 0
 
-      //最初なら飛ばす
-      if (!isFirst) {
-        // 指標が前の周回の値と違うなら
-        if (!isSameAsPrevIndicatorValue) {
-          // 前の周回の操作番号と操作対象を固定化
-          const prevMatch =
-            Matching.matchingArr[Matching.matchingArr.length - 1]
-          const [fileX, fileY] = prevMatch.combination
-          Matching.fixedOperationIndexesX.push(fileX.index)
-          Matching.fixedOperationIndexesY.push(fileY.index)
-          Matching.fixedOperationTargetIdsX.push(
-            fileX.history.eventInfo.eventId
-          )
-          Matching.fixedOperationTargetIdsY.push(
-            fileY.history.eventInfo.eventId
-          )
-        }
-      }
-
       // 既に固定化されてる操作番号 or 操作対象なら追加しない
       if (Matching.isAlreadyFixedOperation(fileX, fileY)) continue
 
@@ -91,6 +74,18 @@ export class Matching {
         Matching.correctCount++
       }
 
+      //最初なら飛ばす
+      if (!isFirst) {
+        // 指標が前の周回の値と違うなら
+        if (!isSameAsPrevIndicatorValue) {
+          // 現在の周回の操作番号と操作対象を固定化
+          Matching.fixIndexesAndTargets(comb.combination)
+        }
+      }
+
+      if (isFixedSameValue) {
+        Matching.fixIndexesAndTargets(comb.combination)
+      }
       Matching.prevIndicatorValue = nowIndicatorValue
     }
     Matching.prevIndicatorValue = null
@@ -120,25 +115,35 @@ export class Matching {
     }
   }
 
+  static fixIndexesAndTargets = (combi: HistoryAndFileData[]) => {
+    const [fileX, fileY] = combi
+    Matching.fixedOperationIndexesX.push(fileX.index)
+    Matching.fixedOperationIndexesY.push(fileY.index)
+    const [targetX, targetY] = fileXYToTargetXY(combi)
+    if (targetX) Matching.fixedOperationTargetsX.push(targetX)
+    if (targetY) Matching.fixedOperationTargetsY.push(targetY)
+  }
+
   static isAlreadyFixedOperation = (
     fileX: HistoryAndFileData,
     fileY: HistoryAndFileData
   ) => {
+    const [targetX, targetY] = fileXYToTargetXY([fileX, fileY])
     const isFixedOpIndexX = Matching.fixedOperationIndexesX.some(
       (index) => index === fileX.index
     )
     const isFixedOpIndexY = Matching.fixedOperationIndexesY.some(
       (index) => index === fileY.index
     )
-    const isFixedOpTargetIdX = Matching.fixedOperationTargetIdsX.some(
-      (id) => id === fileX.history.eventInfo.eventId
+    const isFixedOpTargetIdX = Matching.fixedOperationTargetsX.some(
+      (target) => target === targetX
     )
-    const isFixedOpTargetIdY = Matching.fixedOperationTargetIdsY.some(
-      (id) => id === fileY.history.eventInfo.eventId
+    const isFixedOpTargetIdY = Matching.fixedOperationTargetsY.some(
+      (target) => target === targetY
     )
     const isAlreadyFixedOpIndex = isFixedOpIndexX || isFixedOpIndexY
-    //const isAlreadyFixedOpTargetId = isFixedOpTargetIdX || isFixedOpTargetIdY
-    return isAlreadyFixedOpIndex //|| isAlreadyFixedOpTargetId
+    const isAlreadyFixedOpTargetId = isFixedOpTargetIdX || isFixedOpTargetIdY
+    return isAlreadyFixedOpIndex || isAlreadyFixedOpTargetId
   }
 
   static judge = (X: HistoryAndFileData, Y: HistoryAndFileData): boolean => {
@@ -167,8 +172,8 @@ export class Matching {
   ): boolean => {
     const [_nameX, opNumX, _nameY, opNumY] = nameAndOpNumArr
 
-    const tejunNumberX = changeToTejunNumber(opNumX, x, group)
-    const tejunNumberY = changeToTejunNumber(opNumY, y, group)
+    const tejunNumberX = changeToTejunNumber(Number(opNumX), x, group)
+    const tejunNumberY = changeToTejunNumber(Number(opNumY), y, group)
     return tejunNumberX === tejunNumberY
   }
 

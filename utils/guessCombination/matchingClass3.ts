@@ -1,9 +1,14 @@
 import { cloneDeep } from 'lodash'
+import {
+  fileNameToAlphabetAndOpAndGroup,
+  fileXYToTargetXY,
+} from '../converters'
 import { Matching } from './matchingClass'
 import { CombinationWithIndicator, MatchingPareData } from './type'
 
-export class MatchingThree {
+export class MatchingThree extends Matching {
   constructor(useIndicatorName: string) {
+    super(useIndicatorName)
     MatchingThree.useIndicatorName = useIndicatorName
     MatchingThree.cacheIndicatorIndex = 0
   }
@@ -27,8 +32,11 @@ export class MatchingThree {
     // indicatorが重なってるindexを出す [1,2,3, 7,8] など
     let overlappingIndexes = [] as number[]
     for (let i = 0; i < pairData.matchings.length; i++) {
+      // ここの length - 1; は最後は見なくていいかなって思って減らした
       const match = pairData.matchings[i]
-      if (match.ableToJudge) {
+
+      if (!match.ableToJudge) {
+        // 全部見る必要あるっぽいので全部見ます
         overlappingIndexes.push(i)
       }
     }
@@ -38,6 +46,7 @@ export class MatchingThree {
     // 重複なしなら操作対象でフィルタリングして返す
     const isNoOverlapping = overlappingIndexes.length === 0
     if (isNoOverlapping) {
+      console.log('no over lapping')
       return MatchingThree.filteringByTargetId(pairData)
     }
 
@@ -45,27 +54,47 @@ export class MatchingThree {
     const splitSequence =
       MatchingThree.numbersToSplitSequence(overlappingIndexes) //.slice(0, 2)
 
-    // 固定したいIndexの配列を作成
-    // [[1, 2],[4, 5, 6],[9, 10]] -> [[1,4],[1,5],[1,6],[2,4],[2,5],[2,6]]
-    const fixedIndexesArr = MatchingThree.getCombination(splitSequence)
+    // const sortedArr = Matching.sortCombinationsByIndicator(
+    //   combinationWithIndicators
+    // )
+    // const filteredArr = sortedArr.filter((x) => {
+    //   const [fileX, fileY] = x.combination
+    //   return fileX.history.eventInfo.type === fileY.history.eventInfo.type
+    // })
 
     // 重なってるIndex分だけ調査する
-    const pairs = fixedIndexesArr.map((fixedIndexes) => {
+    const pairs = overlappingIndexes.map((fixedIndex) => {
       // あるindexを固定化させた状態でMatching
       const old = {
         matchings: pairData.matchings,
-        allCount: pairData.allCount,
-        correctCount: pairData.correctCount,
+        allCount: 0,
+        correctCount: 0,
       }
       const filterdPairData = MatchingThree.filteringByTargetIdWithFixedIndexes(
         old,
-        fixedIndexes
+        fixedIndex
       )
       return filterdPairData
     })
 
+    const filterdPairs = pairs.filter((pair) => {
+      const { group } = fileNameToAlphabetAndOpAndGroup(
+        pair.matchings[0].combination[0].fileName
+      )
+      if (group === 'signin') {
+        return pair.allCount >= 2
+      }
+      if (group === 'table') {
+        return pair.allCount >= 5
+      }
+      console.error('Error! group is undefined')
+      return false
+    })
+
+    console.log(filterdPairs, pairs)
+
     // それらの中で指標の合計値が最も小さいものを探して採用
-    const sumIndicators = pairs.map((x) => {
+    const sumIndicators = filterdPairs.map((x) => {
       return x.matchings.reduce((sum, elm) => {
         return sum + elm.indicator.values[indicatorIndex].number
       }, 0)
@@ -73,40 +102,51 @@ export class MatchingThree {
     const min = Math.min(...sumIndicators)
     const minIndex = sumIndicators.findIndex((x) => x === min)
     if (minIndex === -1) {
-      console.error('Error!: minIndex === -1')
+      console.error('Error!: minIndex === -1', sumIndicators)
       return pairs[0]
     }
-    const matchingPair = pairs[minIndex]
+    console.log(filterdPairs, minIndex)
+    const matchingPair = filterdPairs[minIndex]
     return matchingPair
   }
 
   static filteringByTargetIdWithFixedIndexes = (
     pair: MatchingPareData,
-    fixedIndexes: number[]
+    fixedIndex: number
   ): MatchingPareData => {
     let fixedOperationIndexesX = [] as number[]
     let fixedOperationIndexesY = [] as number[]
-    let fixedOperationTargetIdsX = [] as string[]
-    let fixedOperationTargetIdsY = [] as string[]
+    let fixedOperationTargetsX = [] as string[]
+    let fixedOperationTargetsY = [] as string[]
     let newMatchingArr = [] as CombinationWithIndicator[]
     let allCount = 0
     let correctCount = 0
+
+    const match = pair.matchings[fixedIndex]
+    const [fileX, fileY] = match.combination
+    fixedOperationIndexesX.push(fileX.index)
+    fixedOperationIndexesY.push(fileY.index)
+
     for (let i = 0; i < pair.matchings.length; i++) {
       const match = pair.matchings[i]
       const [fileX, fileY] = match.combination
-      const isFixedIndex = fixedIndexes.some((index) => index === i)
+      const isFixedIndex = fixedIndex === i
 
+      // targetXとtargetYを生成
+      const [targetX, targetY] = fileXYToTargetXY(match.combination)
+
+      // 固定化するかどうか判定
       const isFixedOpIndexX = fixedOperationIndexesX.some(
         (index) => index === fileX.index
       )
       const isFixedOpIndexY = fixedOperationIndexesY.some(
         (index) => index === fileY.index
       )
-      const isFixedOpTargetIdX = fixedOperationTargetIdsX.some(
-        (id) => id === fileX.history.eventInfo.eventId
+      const isFixedOpTargetIdX = fixedOperationTargetsX.some(
+        (target) => target === targetX
       )
-      const isFixedOpTargetIdY = fixedOperationTargetIdsY.some(
-        (id) => id === fileY.history.eventInfo.eventId
+      const isFixedOpTargetIdY = fixedOperationTargetsY.some(
+        (target) => target === targetY
       )
       const isAlreadyFixedOperation =
         isFixedOpIndexX ||
@@ -115,15 +155,22 @@ export class MatchingThree {
         isFixedOpTargetIdY
 
       if (isAlreadyFixedOperation && !isFixedIndex) continue
-      newMatchingArr.push(match)
+
+      // 固定化する場合はpush
+      const judge = MatchingThree.judge(fileX, fileY)
+      const ableToJudge: boolean | undefined = true
+      const adoptedComb = { ...match, judge, ableToJudge }
+      newMatchingArr.push(adoptedComb)
       allCount++
-      if (match.judge) {
+      if (judge) {
         correctCount++
       }
+
+      // 固定化したやつはindexとtargetIdを登録
       fixedOperationIndexesX.push(fileX.index)
       fixedOperationIndexesY.push(fileY.index)
-      fixedOperationTargetIdsX.push(fileX.history.eventInfo.eventId)
-      fixedOperationTargetIdsY.push(fileY.history.eventInfo.eventId)
+      if (targetX) fixedOperationTargetsX.push(targetX)
+      if (targetY) fixedOperationTargetsY.push(targetY)
     }
     return {
       matchings: newMatchingArr,
@@ -133,30 +180,62 @@ export class MatchingThree {
   }
 
   static filteringByTargetId = (pair: MatchingPareData): MatchingPareData => {
-    let fixedOperationTargetIdsX = [] as string[]
-    let fixedOperationTargetIdsY = [] as string[]
+    let fixedOperationIndexesX = [] as number[]
+    let fixedOperationIndexesY = [] as number[]
+    let fixedOperationTargetsX = [] as string[]
+    let fixedOperationTargetsY = [] as string[]
+    let allCount = 0
+    let correctCount = 0
     let newMatchingArr = [] as CombinationWithIndicator[]
+
     for (let i = 0; i < pair.matchings.length; i++) {
       const match = pair.matchings[i]
       const [fileX, fileY] = match.combination
 
-      const isFixedOpTargetIdX = fixedOperationTargetIdsX.some(
-        (id) => id === fileX.history.eventInfo.eventId
-      )
-      const isFixedOpTargetIdY = fixedOperationTargetIdsY.some(
-        (id) => id === fileY.history.eventInfo.eventId
-      )
-      const isAlreadyFixedOpTargetId = isFixedOpTargetIdX || isFixedOpTargetIdY
-      if (isAlreadyFixedOpTargetId) continue
-      newMatchingArr.push(match)
+      // targetXとtargetYを生成
+      const [targetX, targetY] = fileXYToTargetXY(match.combination)
 
-      fixedOperationTargetIdsX.push(fileX.history.eventInfo.eventId)
-      fixedOperationTargetIdsY.push(fileY.history.eventInfo.eventId)
+      // 固定化するかどうか判定
+      const isFixedOpIndexX = fixedOperationIndexesX.some(
+        (index) => index === fileX.index
+      )
+      const isFixedOpIndexY = fixedOperationIndexesY.some(
+        (index) => index === fileY.index
+      )
+      const isFixedOpTargetIdX = fixedOperationTargetsX.some(
+        (target) => target === targetX
+      )
+      const isFixedOpTargetIdY = fixedOperationTargetsY.some(
+        (target) => target === targetY
+      )
+      const isAlreadyFixedOperation =
+        isFixedOpIndexX ||
+        isFixedOpIndexY ||
+        isFixedOpTargetIdX ||
+        isFixedOpTargetIdY
+
+      if (isAlreadyFixedOperation) continue
+
+      // 固定化する場合はpush
+      const judge = MatchingThree.judge(fileX, fileY)
+      const ableToJudge: boolean | undefined = true
+      const adoptedComb = { ...match, judge, ableToJudge }
+      newMatchingArr.push(adoptedComb)
+      allCount++
+      if (judge) {
+        correctCount++
+      }
+
+      // 固定化したやつはindexとtargetIdを登録
+      fixedOperationIndexesX.push(fileX.index)
+      fixedOperationIndexesY.push(fileY.index)
+      // if (targetX) fixedOperationTargetsX.push(targetX)
+      // if (targetY) fixedOperationTargetsY.push(targetY)
     }
     return {
       matchings: newMatchingArr,
-      allCount: pair.allCount,
-      correctCount: pair.correctCount,
+      allCount,
+      correctCount,
     }
   }
 
@@ -181,7 +260,9 @@ export class MatchingThree {
       return numbersArr[0].map((x) => [x])
     }
     const [arr1, arr2] = numbersArr
-    return arr1.flatMap((d) => arr2.map((v) => [d, v]))
+    return arr1.flatMap((d) => {
+      return arr2.map((v) => [d, v])
+    })
   }
 
   static sortCombinationsByIndicator = (
