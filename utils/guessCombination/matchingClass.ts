@@ -62,7 +62,7 @@ export class Matching {
       //最初なら飛ばす
       if (!isFirst) {
         // 指標が前の周回の値と違うなら
-        if (isSameAsPrevIndicatorValue) {
+        if (!isSameAsPrevIndicatorValue) {
           // 前の周回の操作番号と操作対象を固定化
           const prevMatch =
             Matching.matchingArr[Matching.matchingArr.length - 1]
@@ -83,7 +83,7 @@ export class Matching {
 
       // 追加処理
       const judge = Matching.judge(fileX, fileY)
-      const ableToJudge: boolean | undefined = true // とりあえずtrue
+      const ableToJudge: boolean | undefined = true
       const adoptedComb = { ...comb, judge, ableToJudge }
       Matching.matchingArr.push(adoptedComb)
       Matching.allCount++
@@ -102,8 +102,7 @@ export class Matching {
       const firstIndex = self.findIndex(
         (s) => s.indicator.values[index].number === indicatorValue
       )
-      const firstReverseIndex = self
-        .concat()
+      const firstReverseIndex = cloneDeep(self)
         .reverse()
         .findIndex((s) => s.indicator.values[index].number === indicatorValue)
       const lastIndex = self.length - 1 - firstReverseIndex
@@ -138,8 +137,8 @@ export class Matching {
       (id) => id === fileY.history.eventInfo.eventId
     )
     const isAlreadyFixedOpIndex = isFixedOpIndexX || isFixedOpIndexY
-    const isAlreadyFixedOpTargetId = isFixedOpTargetIdX || isFixedOpTargetIdY
-    return isAlreadyFixedOpIndex && isAlreadyFixedOpTargetId
+    //const isAlreadyFixedOpTargetId = isFixedOpTargetIdX || isFixedOpTargetIdY
+    return isAlreadyFixedOpIndex //|| isAlreadyFixedOpTargetId
   }
 
   static judge = (X: HistoryAndFileData, Y: HistoryAndFileData): boolean => {

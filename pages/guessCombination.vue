@@ -199,6 +199,9 @@ import {
 import {
   MatchingTwo
 } from '~/utils/guessCombination/matchingClass2'
+import {
+  MatchingThree
+} from '~/utils/guessCombination/matchingClass3'
 import { fileNameToAlphabet, alphabetToGroup, changeToTejunNumber } from '~/utils/converters'
 
 type FileCombination = {
@@ -208,10 +211,11 @@ type FileCombination = {
 
 const MATCHINGALGORITHMS = [
   'AdoptInAscending',
-  'minimumWeightBipartiteMatch'
+  'MinimumWeightBipartiteMatch',
+  'AdoptInAscendingForDuplicate'
 ]
 
-type MatchingAlgorithm = 'AdoptInAscending' | 'minimumWeightBipartiteMatch'
+type MatchingAlgorithm = 'AdoptInAscending' | 'MinimumWeightBipartiteMatch' | 'AdoptInAscendingForDuplicate'
 
 type State = {
   isShow: boolean,
@@ -259,7 +263,7 @@ export default defineComponent({
       allMatchCount: 0,
       correctMatchCount: 0,
       matchingsByFilesAndIndicator: [],
-      matchingAlgorithm: 'AdoptInAscending' 
+      matchingAlgorithm: 'AdoptInAscendingForDuplicate' 
     })
 
     const INDICATOR_INDEXES = [0, 5, 6, 7]
@@ -365,12 +369,11 @@ export default defineComponent({
             return { combination, indicator }
           })
         const { matchings, allCount, correctCount } = generateMatching(combinationWithIndicators)
-        const newMatchings = reMatchings(matchings)
 
         const matchingsWithFileName: MatchingsWithFileName = {
           fileNameX: fileX.fileName,
           fileNameY: fileY.fileName,
-          matchings: newMatchings,
+          matchings,
           allCount,
           correctCount,
           correctRate: correctCount / allCount * 100
@@ -385,8 +388,13 @@ export default defineComponent({
         const pairData = generateMatchingByAlgorism(matchings)
         return pairData
       }
-      if (state.matchingAlgorithm === 'minimumWeightBipartiteMatch') {
+      if (state.matchingAlgorithm === 'MinimumWeightBipartiteMatch') {
         const { generateMatchingByAlgorism } = new MatchingTwo(state.calcIndicatorName)
+        const pairData = generateMatchingByAlgorism(matchings)
+        return pairData
+      }
+      if (state.matchingAlgorithm === 'AdoptInAscendingForDuplicate') {
+        const { generateMatchingByAlgorism } = new MatchingThree(state.calcIndicatorName)
         const pairData = generateMatchingByAlgorism(matchings)
         return pairData
       }
@@ -395,25 +403,6 @@ export default defineComponent({
         allCount: 0,
         correctCount: 0
       }
-    }
-
-    const reMatchings = (matchings: CombinationWithIndicator[] ): CombinationWithIndicator[] => {
-      const isNotAbleToJudge = matchings.some((m) => !m.ableToJudge)
-      if (!isNotAbleToJudge) return matchings.map(x => ({ ...x, ableToJudge: true }))
-
-      const rematchingIndexes = matchings.reduce((a: number[], e, i) => {
-        if (!e.ableToJudge)
-            a.push(i);
-        return a;
-      }, []);  
-      const isLastIndexAbleToJudge = rematchingIndexes[rematchingIndexes.length - 1] === matchings.length - 1
-      if (isLastIndexAbleToJudge) return matchings.map(x => ({ ...x, ableToJudge: true }))
-
-      return generateReMatchings(matchings, rematchingIndexes)
-    }
-
-    const generateReMatchings = (matchings: CombinationWithIndicator[], rematchingIndexes: number[] ): CombinationWithIndicator[] => {
-      return matchings
     }
 
     const sortMatchingsByFileName = (matchingsByFiles: MatchingsWithFileName[]) => {
