@@ -9,12 +9,7 @@ import { CombinationWithIndicator, MatchingPareData } from './type'
 export class MatchingThree extends Matching {
   constructor(useIndicatorName: string) {
     super(useIndicatorName)
-    MatchingThree.useIndicatorName = useIndicatorName
-    MatchingThree.cacheIndicatorIndex = 0
   }
-
-  static useIndicatorName: string = ''
-  static cacheIndicatorIndex: number = 0
 
   generateMatchingByAlgorism = (
     combinationWithIndicators: CombinationWithIndicator[]
@@ -24,49 +19,44 @@ export class MatchingThree extends Matching {
       MatchingThree.useIndicatorName
     )
 
-    const { generateMatchingByAlgorism } = new Matching(
-      MatchingThree.useIndicatorName
+    const sortedArr = MatchingThree.sortCombinationsByIndicator(
+      combinationWithIndicators
     )
-    const pairData = generateMatchingByAlgorism(combinationWithIndicators)
+    const filteredArr = sortedArr.filter((x) => {
+      const [fileX, fileY] = x.combination
+      return fileX.history.eventInfo.type === fileY.history.eventInfo.type
+    })
 
     // indicatorが重なってるindexを出す [1,2,3, 7,8] など
     let overlappingIndexes = [] as number[]
-    for (let i = 0; i < pairData.matchings.length; i++) {
-      // ここの length - 1; は最後は見なくていいかなって思って減らした
-      const match = pairData.matchings[i]
-
+    for (let i = 0; i < filteredArr.length; i++) {
+      const match = filteredArr[i]
       if (!match.ableToJudge) {
-        // 全部見る必要あるっぽいので全部見ます
         overlappingIndexes.push(i)
       }
     }
 
-    const indicatorIndex = MatchingThree.cacheIndicatorIndex
+    // [1, 2, 4, 5, 6, 9, 10] -> [1, 2]
+    const firstOverlappingIndexes =
+      MatchingThree.numbersToSplitSequence(overlappingIndexes)[0]
 
     // 重複なしなら操作対象でフィルタリングして返す
-    const isNoOverlapping = overlappingIndexes.length === 0
+    const isNoOverlapping = firstOverlappingIndexes.length === 0
     if (isNoOverlapping) {
       console.log('no over lapping')
-      return MatchingThree.filteringByTargetId(pairData)
+      const pair = {
+        matchings: filteredArr,
+        allCount: 0,
+        correctCount: 0,
+      }
+      return MatchingThree.filteringByTargetId(pair)
     }
 
-    // [1, 2, 4, 5, 6, 9, 10] -> [[1, 2],[4, 5, 6],[9, 10]]
-    const splitSequence =
-      MatchingThree.numbersToSplitSequence(overlappingIndexes) //.slice(0, 2)
-
-    // const sortedArr = Matching.sortCombinationsByIndicator(
-    //   combinationWithIndicators
-    // )
-    // const filteredArr = sortedArr.filter((x) => {
-    //   const [fileX, fileY] = x.combination
-    //   return fileX.history.eventInfo.type === fileY.history.eventInfo.type
-    // })
-
     // 重なってるIndex分だけ調査する
-    const pairs = overlappingIndexes.map((fixedIndex) => {
+    const pairs = firstOverlappingIndexes.map((fixedIndex) => {
       // あるindexを固定化させた状態でMatching
       const old = {
-        matchings: pairData.matchings,
+        matchings: filteredArr,
         allCount: 0,
         correctCount: 0,
       }
@@ -82,9 +72,11 @@ export class MatchingThree extends Matching {
         pair.matchings[0].combination[0].fileName
       )
       if (group === 'signin') {
+        if (!(pair.allCount >= 2)) console.error('Error! allCount < 2')
         return pair.allCount >= 2
       }
       if (group === 'table') {
+        if (!(pair.allCount >= 5)) console.error('Error! allCount < 5')
         return pair.allCount >= 5
       }
       console.error('Error! group is undefined')
@@ -93,6 +85,7 @@ export class MatchingThree extends Matching {
 
     console.log(filterdPairs, pairs)
 
+    const indicatorIndex = MatchingThree.cacheIndicatorIndex
     // それらの中で指標の合計値が最も小さいものを探して採用
     const sumIndicators = filterdPairs.map((x) => {
       return x.matchings.reduce((sum, elm) => {
@@ -229,8 +222,8 @@ export class MatchingThree extends Matching {
       // 固定化したやつはindexとtargetIdを登録
       fixedOperationIndexesX.push(fileX.index)
       fixedOperationIndexesY.push(fileY.index)
-      // if (targetX) fixedOperationTargetsX.push(targetX)
-      // if (targetY) fixedOperationTargetsY.push(targetY)
+      if (targetX) fixedOperationTargetsX.push(targetX)
+      if (targetY) fixedOperationTargetsY.push(targetY)
     }
     return {
       matchings: newMatchingArr,
@@ -240,17 +233,22 @@ export class MatchingThree extends Matching {
   }
 
   static numbersToSplitSequence = (numbers: number[]): number[][] => {
-    // [1, 2, 4, 5, 6, 9, 10] -> [[1, 2],[4, 5, 6],[9, 10]]
+    // [1, 2, 4, 5, 6, 9, 10] -> [[1, 2],[4, 5, 6],[9, 10]] -> [[1, 2]]
     const splitArr = [] as number[][]
     let pre = null as null | number
-    numbers.forEach((x) => {
+    for (let index = 0; index < numbers.length; index++) {
+      const x = numbers[index]
       if (pre !== x - 1) {
         splitArr[splitArr.length] = [x]
       } else {
-        splitArr[splitArr.length - 1].push(x)
+        if (splitArr.length === 0) {
+          splitArr[splitArr.length - 1].push(x)
+        } else {
+          break
+        }
       }
       pre = x
-    })
+    }
     return splitArr
   }
 
@@ -276,25 +274,5 @@ export class MatchingThree extends Matching {
       return ad === bd ? 0 : ad < bd ? -1 : 1
     })
     return sortedArr
-  }
-
-  static saveCacheIndicatorIndex = (
-    comb: CombinationWithIndicator,
-    indicatorName: string
-  ) => {
-    if (MatchingThree.cacheIndicatorIndex !== 0) return
-    const index = comb.indicator.names.findIndex(
-      (name) => name === indicatorName
-    )
-    if (index !== -1) {
-      MatchingThree.cacheIndicatorIndex = index
-      return
-    } else {
-      console.error(
-        'Indicator index can not found in combination by indicator name',
-        comb.indicator.names,
-        indicatorName
-      )
-    }
   }
 }

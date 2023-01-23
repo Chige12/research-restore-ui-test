@@ -263,7 +263,7 @@ export default defineComponent({
       allMatchCount: 0,
       correctMatchCount: 0,
       matchingsByFilesAndIndicator: [],
-      matchingAlgorithm: 'AdoptInAscending' 
+      matchingAlgorithm: 'AdoptInAscendingForDuplicate' 
     })
 
     const INDICATOR_INDEXES = [0, 5, 6, 7]
@@ -385,7 +385,7 @@ export default defineComponent({
     const generateMatching = (matchings: CombinationWithIndicator[]): MatchingPareData => {
       if (state.matchingAlgorithm === 'AdoptInAscending') {
         const { generateMatchingByAlgorism } = new Matching(state.calcIndicatorName)
-        const pairData = generateMatchingByAlgorism(matchings, true)
+        const pairData = generateMatchingByAlgorism(matchings, false)
         return pairData
       }
       if (state.matchingAlgorithm === 'MinimumWeightBipartiteMatch') {

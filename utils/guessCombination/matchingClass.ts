@@ -83,6 +83,7 @@ export class Matching {
         }
       }
 
+      // 判定可能性に関係なく常に固定化する
       if (isFixedSameValue) {
         Matching.fixIndexesAndTargets(comb.combination)
       }
