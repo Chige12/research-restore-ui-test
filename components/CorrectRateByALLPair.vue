@@ -1,5 +1,11 @@
 <template>
   <div>
+    <div>
+      <v-switch
+        v-model="state.isShow"
+        :label="`show: ${state.isShow ? 'ON ' : 'OFF'}`">
+      </v-switch>
+    </div>
     <v-simple-table>
       <template v-slot:default>
         <thead>
@@ -25,7 +31,7 @@
               :key="`indctrId-${indctrId}`"
               :style="`color: ${indctr.correctRate === 100 ? 'green' : indctr.correctRate === 0 ? 'red' : 'rgba(0, 0, 0, 0.87)'}`"
             >
-              {{ indctr.correctRate }}% ({{indctr.correctCount}}/{{ indctr.allCount }})
+              {{ indctr.correctRate }}{{ state.isShow ? `% (${indctr.correctCount}/${ indctr.allCount })` : ''}}
             </td>
           </tr>
         </tbody>
@@ -43,6 +49,7 @@ import {
 import { fileNameToAlphabetAndOpAndGroup } from '~/utils/converters'
 
 type State = {
+  isShow: boolean,
   header: string[]
   correctRateAllPair: correctRateAllPair[]
 }
@@ -67,6 +74,7 @@ export default defineComponent({
   },
   setup(props) {
     const state = reactive<State>({
+      isShow: true,
       header: [],
       correctRateAllPair: []
     })
