@@ -43,7 +43,6 @@
 </template>
 
 <script lang="ts">
-import Mixin from '~/mixins/deepDiff'
 import { desserts, Dessert } from '~/assets/searchObj'
 
 type RowsPerPage = number | 'All'
@@ -69,7 +68,6 @@ const isMatch = (text: string, keyword: string): boolean => {
 
 export default defineComponent({
   name: 'Search02',
-  mixins: [Mixin],
   data(): Data {
     return {
       search: '',

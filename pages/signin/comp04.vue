@@ -91,7 +91,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Mixin from '~/mixins/deepDiff'
 
 type Data = {
   sheet: boolean
@@ -103,7 +102,6 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp04',
-  mixins: [Mixin],
   data(): Data {
     return {
       sheet: false,

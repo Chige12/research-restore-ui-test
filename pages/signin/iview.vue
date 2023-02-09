@@ -28,7 +28,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Mixin from '~/mixins/deepDiff'
 
 type Data = {
   formInline: {
@@ -43,7 +42,6 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInIView',
-  mixins: [Mixin],
   data(): Data {
     return {
       formInline: {

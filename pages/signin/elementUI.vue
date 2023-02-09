@@ -46,7 +46,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Mixin from '~/mixins/deepDiff'
 
 type Data = {
   isShowPassword: boolean
@@ -65,7 +64,6 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp01',
-  mixins: [Mixin],
   data(): Data {
     const validateEmail = (rule: any, value: string, callback: any) => {
       const pattern =

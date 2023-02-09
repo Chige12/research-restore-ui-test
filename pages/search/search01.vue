@@ -27,7 +27,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Mixin from '~/mixins/deepDiff'
 import { desserts, Dessert } from '~/assets/searchObj'
 
 type Data = {
@@ -38,7 +37,6 @@ type Data = {
 
 export default Vue.extend({
   name: 'Search01',
-  mixins: [Mixin],
   data(): Data {
     return {
       search: '',

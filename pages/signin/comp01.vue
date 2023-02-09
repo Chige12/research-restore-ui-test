@@ -37,7 +37,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Mixin from '~/mixins/deepDiff'
 
 type Data = {
   email: string
@@ -52,7 +51,6 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp01',
-  mixins: [Mixin],
   data(): Data {
     return {
       email: '',
