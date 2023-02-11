@@ -42,6 +42,7 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInIView',
+  layout: 'onlyPage',
   data(): Data {
     return {
       formInline: {

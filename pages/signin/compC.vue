@@ -64,6 +64,7 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp01',
+  layout: 'onlyPage',
   data(): Data {
     const validateEmail = (rule: any, value: string, callback: any) => {
       const pattern =

@@ -68,6 +68,7 @@ const isMatch = (text: string, keyword: string): boolean => {
 
 export default defineComponent({
   name: 'Search02',
+  layout: 'onlyPage',
   data(): Data {
     return {
       search: '',

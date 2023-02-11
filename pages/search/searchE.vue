@@ -37,6 +37,7 @@ type Data = {
 
 export default Vue.extend({
   name: 'Search01',
+  layout: 'onlyPage',
   data(): Data {
     return {
       search: '',

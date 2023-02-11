@@ -53,6 +53,7 @@ type Data = {
 
 export default Vue.extend({
   name: 'SignInComp01',
+  layout: 'onlyPage',
   data(): Data {
     return {
       email: '',
